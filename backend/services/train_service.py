@@ -387,7 +387,7 @@ async def generate_live_trains_geojson(sim_time: str = None, yatri_enabled: bool
             # 4. EXTRAPOLATE ALONG TRACK: Project the train's position forward if GPS data is stale
             if history and velocity > 0:
                 dt_s = now_ts - history["time"]
-                if 0 < dt_s < 15: # Safely extrapolate up to 15 seconds (tight with 8s polling)
+                if 0 < dt_s < 60: # Safely extrapolate up to 60 seconds to hide Yatri API lag
                     extra_dist = velocity * dt_s
                     extrap_dist = train_dist + (extra_dist if direction == "DOWN" else -extra_dist)
                     
@@ -397,10 +397,11 @@ async def generate_live_trains_geojson(sim_time: str = None, yatri_enabled: bool
                         train_dist = extrap_dist
 
             # 5. STATUS TEXT: Generate perfectly synced physical status text
+            yatri_live_status = gps_loc.get("train_live_status", "")
+            
             nearest_st_idx = find_closest_index(nearest_st_lat, nearest_st_lon, line_name)
             nearest_st_dist = _TRACK_CACHE[line_name]["cum_dist"][nearest_st_idx]
             dist_to_nearest = abs(train_dist - nearest_st_dist)
-
             
             if status == "At Station" or (dist_to_nearest < 100 and true_velocity < 5.0):
                 status_text = f"Stopped at {nearest_st_name}"
@@ -439,6 +440,8 @@ async def generate_live_trains_geojson(sim_time: str = None, yatri_enabled: bool
                     "train_accuracy": gps_loc.get("train_accuracy_status", -1),
                     "live_time": gps_loc.get("time", ""),
                     "yatri_station_id": gps_loc.get("nearest_station_id", ""),
+                    "yatri_live_status": yatri_live_status,
+                    "yatri_status_feedback": gps_loc.get("train_status_feedback", ""),
                     "gps_raw_lat": raw_lat,
                     "gps_raw_lon": raw_lon,
                 }

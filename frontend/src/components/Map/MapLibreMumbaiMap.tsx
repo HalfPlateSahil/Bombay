@@ -540,6 +540,7 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
               id: "live-trains-3d-layer",
               type: "fill-extrusion",
               source: "live-trains-3d",
+              layout: { visibility: show ? "visible" : "none" },
               paint: {
                 "fill-extrusion-color": ["get", "render_color"],
                 "fill-extrusion-height": ["get", "render_height"],
@@ -558,6 +559,7 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
               id: "live-trains-bg-layer",
               type: "circle",
               source: "live-trains",
+              layout: { visibility: show ? "visible" : "none" },
               paint: {
                 "circle-radius": [
                   "case",
@@ -585,6 +587,7 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
               type: "symbol",
               source: "live-trains",
               layout: {
+                "visibility": show ? "visible" : "none",
                 "icon-image": "train-icon",
                 "icon-size": 0.7,
                 "icon-allow-overlap": true,
@@ -622,15 +625,19 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
         const mergedFeatures = newFeatures.map((nf: any) => {
           const existing = currentMap.get(nf.properties.id);
           if (existing) {
-            // Store the incoming real coordinate as the server target
-            const serverCoords = nf.geometry.coordinates;
-            // But visually start from where the train currently is
+            // PLAYBACK BUFFER: Store the previous target and the new target
+            nf.properties.prevServerCoords = existing.properties.serverCoords || existing.geometry.coordinates;
+            nf.properties.serverCoords = nf.geometry.coordinates;
+            
+            // Set the transition timer for this update
+            nf.properties.transitionStartTime = Date.now();
+            
+            // Keep visual coordinates exactly where the interpolation currently is
             nf.geometry.coordinates = [...existing.geometry.coordinates]; 
-            nf.properties.serverCoords = serverCoords;
-            nf.properties.lastUpdateTime = Date.now();
           } else {
             nf.properties.serverCoords = [...nf.geometry.coordinates];
-            nf.properties.lastUpdateTime = Date.now();
+            nf.properties.prevServerCoords = [...nf.geometry.coordinates];
+            nf.properties.transitionStartTime = Date.now();
           }
           return nf;
         });
@@ -682,56 +689,34 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
           const p = f.properties;
           const coords = f.geometry.coordinates;
           
-          // Physics-based Dead-Reckoning Animation
-          if (p.serverCoords) {
+          // Playback Buffer Animation
+          if (p.serverCoords && p.prevServerCoords && p.transitionStartTime) {
              const tCoords = p.serverCoords;
-             const cCoords = coords;
+             const pCoords = p.prevServerCoords;
+             
+             // Time elapsed since the new GPS target arrived
+             const elapsedMs = Date.now() - p.transitionStartTime;
+             // We interpolate over 5.5 seconds (slightly longer than 5s polling to prevent stuttering)
+             const durationMs = 5500.0; 
+             const progress = Math.min(1.0, elapsedMs / durationMs);
              
              if (p.status === "At Station") {
                  // Gently glide into the station
                  const lerpFactor = Math.min(1.0, dt * 3.0); 
-                 const nLon = cCoords[0] + (tCoords[0] - cCoords[0]) * lerpFactor;
-                 const nLat = cCoords[1] + (tCoords[1] - cCoords[1]) * lerpFactor;
-                 if (Math.abs(nLon - cCoords[0]) > 0.000001 || Math.abs(nLat - cCoords[1]) > 0.000001) {
-                    f.geometry.coordinates = [nLon, nLat];
-                    changed = true;
-                 }
-             } else if (p.velocity_ms > 0 && p.heading !== undefined) {
-                 // DEAD-RECKONING: Move the train along its heading at its velocity
-                 // This makes trains feel alive between 8s server updates
-                 const speed = p.velocity_ms; // meters per second
-                 const headingRad = (p.heading * Math.PI) / 180.0;
-                 
-                 // Convert m/s movement to degrees
-                 const metersPerDegreeLat = 111320.0;
-                 const metersPerDegreeLon = 111320.0 * Math.cos(cCoords[1] * Math.PI / 180.0);
-                 
-                 const dLon = (speed * dt * Math.sin(headingRad)) / metersPerDegreeLon;
-                 const dLat = (speed * dt * Math.cos(headingRad)) / metersPerDegreeLat;
-                 
-                 // Dead-reckoned position
-                 let drLon = cCoords[0] + dLon;
-                 let drLat = cCoords[1] + dLat;
-                 
-                 // Blend with server correction: gently pull towards server target
-                 // This prevents cumulative drift from dead-reckoning errors
-                 const errLon = tCoords[0] - drLon;
-                 const errLat = tCoords[1] - drLat;
-                 const correctionRate = 0.15; // 15% per frame — subtle but steady correction
-                 
-                 const nLon = drLon + errLon * correctionRate;
-                 const nLat = drLat + errLat * correctionRate;
-                 
-                 if (Math.abs(nLon - cCoords[0]) > 0.0000001 || Math.abs(nLat - cCoords[1]) > 0.0000001) {
+                 const nLon = coords[0] + (tCoords[0] - coords[0]) * lerpFactor;
+                 const nLat = coords[1] + (tCoords[1] - coords[1]) * lerpFactor;
+                 if (Math.abs(nLon - tCoords[0]) > 0.000001 || Math.abs(nLat - tCoords[1]) > 0.000001) {
                     f.geometry.coordinates = [nLon, nLat];
                     changed = true;
                  }
              } else {
-                 // Fallback: smooth glide for zero-velocity or unknown heading
-                 const lerpFactor = Math.min(1.0, dt * 1.5); 
-                 const nLon = cCoords[0] + (tCoords[0] - cCoords[0]) * lerpFactor;
-                 const nLat = cCoords[1] + (tCoords[1] - cCoords[1]) * lerpFactor;
-                 if (Math.abs(nLon - cCoords[0]) > 0.000001 || Math.abs(nLat - cCoords[1]) > 0.000001) {
+                 // CONSTANT SPEED PLAYBACK BUFFER
+                 // Moves linearly from Point A to Point B over the exact time interval
+                 const nLon = pCoords[0] + (tCoords[0] - pCoords[0]) * progress;
+                 const nLat = pCoords[1] + (tCoords[1] - pCoords[1]) * progress;
+                 
+                 // If the target is different from the previous, we are moving, so always update
+                 if (pCoords[0] !== tCoords[0] || pCoords[1] !== tCoords[1]) {
                     f.geometry.coordinates = [nLon, nLat];
                     changed = true;
                  }
@@ -1075,19 +1060,18 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
 
           const isGps = props.live_source === 'yatri_gps';
           const sourceBadge = isGps
-            ? '<span style="font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #059669; color: #ffffff; font-weight: 700; letter-spacing: 0.5px;">🟢 LIVE GPS</span>'
-            : '<span style="font-size: 9px; padding: 1px 6px; border-radius: 3px; background: #64748b; color: #ffffff; font-weight: 700; letter-spacing: 0.5px;">📅 SCHEDULED (GPS OFFLINE)</span>';
+            ? '<span class="live-badge" style="font-size: 9px; padding: 3px 6px; border-radius: 4px; background: #059669; color: #ffffff; font-weight: 800; letter-spacing: 0.5px;">🟢 LIVE GPS</span>'
+            : '<span style="font-size: 9px; padding: 3px 6px; border-radius: 4px; background: #64748b; color: #ffffff; font-weight: 800; letter-spacing: 0.5px;">📅 SCHEDULED</span>';
           
-          // Clearer Status Text derived from the backend (or fallback)
+          // Premium Sleek Dark Mode Redesign
           const primaryStatus = props.status_text || props.status || "Unknown";
           
-          // GPS-specific metadata row
           let gpsInfo = '';
           if (isGps) {
-            const trainStatus = props.train_status === 1 ? '🔴 At Station' : props.train_status === 0 ? '🟢 Running' : '⚪ Unknown';
+            const trainStatus = props.train_status === 1 ? 'At Station' : props.train_status === 0 ? 'Running' : 'Unknown';
             const accuracy = props.train_accuracy === 0 ? 'High' : props.train_accuracy === 1 ? 'Medium' : 'Low';
+            const yatriLiveStatus = props.yatri_live_status ? `<div style="color: #10b981; font-weight: 500; font-size: 11px; margin-top: 4px;">${props.yatri_live_status}</div>` : '';
             
-            // Calculate how stale the GPS fix is
             let fixAge = '';
             if (props.live_time) {
               try {
@@ -1098,42 +1082,78 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
             }
 
             gpsInfo = `
-              <div style="margin-top: 8px; padding: 6px 8px; background: #f0fdf4; border-radius: 6px; border: 1px solid #bbf7d0;">
-                <div style="font-size: 10px; color: #166534; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Telemetry Details</div>
-                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #15803d; margin-bottom: 2px;">
-                  <span>State:</span><span style="font-weight: 600;">${trainStatus}</span>
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="font-size: 9px; color: #94a3b8; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Telemetry</div>
+                    ${sourceBadge}
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #15803d; margin-bottom: 2px;">
-                  <span>Accuracy:</span><span style="font-weight: 600;">${accuracy}</span>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #cbd5e1; margin-bottom: 4px;">
+                  <span>State</span><span style="font-weight: 500; color: #f8fafc;">${trainStatus}</span>
                 </div>
-                ${fixAge ? `<div style="display: flex; justify-content: space-between; font-size: 10px; color: #15803d;">
-                  <span>Last Fix:</span><span style="font-weight: 600;">${fixAge}</span>
+                <div style="display: flex; justify-content: space-between; font-size: 11px; color: #cbd5e1; margin-bottom: 4px;">
+                  <span>Accuracy</span><span style="font-weight: 500; color: #f8fafc;">${accuracy}</span>
+                </div>
+                ${fixAge ? `<div style="display: flex; justify-content: space-between; font-size: 11px; color: #cbd5e1;">
+                  <span>Last Fix</span><span style="font-weight: 500; color: #f8fafc;">${fixAge}</span>
                 </div>` : ''}
               </div>
             `;
           }
           
+          // CSS animations string to inject if not already present globally
+          const pulseAnimation = `
+            <style>
+              @keyframes neon-pulse {
+                0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+                70% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+                100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+              }
+              .live-badge { animation: neon-pulse 2s infinite; }
+              .dark-popup-container {
+                 background: #0f172a;
+                 border: 1px solid rgba(255, 255, 255, 0.1);
+                 box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+                 border-radius: 12px;
+                 padding: 14px;
+                 font-family: 'Inter', sans-serif;
+                 min-width: 220px;
+                 color: #f8fafc;
+              }
+              .maplibregl-popup-content {
+                 background: transparent !important;
+                 padding: 0 !important;
+                 box-shadow: none !important;
+              }
+              .maplibregl-popup-tip {
+                 border-top-color: #0f172a !important;
+              }
+            </style>
+          `;
+
           const html = `
-            <div style="padding: 8px; font-family: 'Inter', sans-serif; min-width: 180px;">
-              <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;">
-                <span style="font-weight: 700; font-size: 14px; color: #1e293b; line-height: 1.2;">🚆 ${props.id}</span>
+            ${pulseAnimation}
+            <div class="dark-popup-container">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                <span style="font-weight: 700; font-size: 14px; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
+                  <span style="font-size: 16px;">🚆</span> ${props.id}
+                </span>
               </div>
               
-              <div style="margin-bottom: 8px;">
-                ${sourceBadge}
-              </div>
-              
-              <div style="background: #f8fafc; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
-                  <div style="font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 2px;">${primaryStatus}</div>
-                  <div style="font-size: 11px; color: #64748b;">
-                      Next Stop: <span style="font-weight: 600; color: #334155;">${props.next_station}</span>
-                      <br/>ETA: <span style="font-weight: 600; color: #334155;">${props.next_time}</span>
+              <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                  <div style="font-size: 13px; font-weight: 600; color: #f8fafc; margin-bottom: 2px;">${primaryStatus}</div>
+                  ${props.yatri_live_status ? `<div style="color: #10b981; font-weight: 500; font-size: 11px; margin-bottom: 8px;">${props.yatri_live_status}</div>` : ''}
+                  
+                  <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between; margin-top: 8px; align-items: center;">
+                      <span>Next <span style="font-weight: 500; color: #cbd5e1; margin-left: 4px;">${props.next_station}</span></span>
+                      <span style="font-family: monospace; font-size: 12px; font-weight: 500; color: #e2e8f0; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;">${props.next_time}</span>
                   </div>
               </div>
               
               ${gpsInfo}
               
-              <div style="font-size: 10px; margin-top: 8px; padding: 3px 6px; border-radius: 4px; display: inline-block; background-color: ${props.color}15; color: ${props.color}; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid ${props.color}30;">${props.line}</div>
+              <div style="margin-top: 12px; display: flex; justify-content: center;">
+                 <div style="font-size: 9px; padding: 4px 8px; border-radius: 4px; display: inline-block; background-color: ${props.color}20; color: ${props.color}; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; border: 1px solid ${props.color}40;">${props.line} LINE</div>
+              </div>
             </div>
           `;
           
@@ -1319,6 +1339,37 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
       markerRef.current.togglePopup();
     });
   }, [selectedLocation]);
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Immediate Layer Visibility Sync
+  // ──────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    // Trains
+    const showTrains = layers.railways || false;
+    if (map.getLayer("live-trains-bg-layer")) map.setLayoutProperty("live-trains-bg-layer", "visibility", showTrains ? "visible" : "none");
+    if (map.getLayer("live-trains-layer")) map.setLayoutProperty("live-trains-layer", "visibility", showTrains ? "visible" : "none");
+    if (map.getLayer("live-trains-3d-layer")) map.setLayoutProperty("live-trains-3d-layer", "visibility", showTrains ? "visible" : "none");
+
+    // Flights
+    const showFlights = layers.flights || false;
+    if (map.getLayer("live-flights-3d-layer")) map.setLayoutProperty("live-flights-3d-layer", "visibility", showFlights ? "visible" : "none");
+    if (map.getLayer("live-flights-layer")) map.setLayoutProperty("live-flights-layer", "visibility", showFlights ? "visible" : "none");
+
+    // AQI
+    const showAqi = layers.aqi || false;
+    if (map.getLayer("aqi-heatmap")) map.setLayoutProperty("aqi-heatmap", "visibility", showAqi ? "visible" : "none");
+    if (map.getLayer("aqi-coverage-circles")) map.setLayoutProperty("aqi-coverage-circles", "visibility", showAqi ? "visible" : "none");
+    if (map.getLayer("aqi-value-labels")) map.setLayoutProperty("aqi-value-labels", "visibility", showAqi ? "visible" : "none");
+
+    // Traffic
+    const showTraffic = layers.traffic || false;
+    if (map.getLayer("traffic-lines")) map.setLayoutProperty("traffic-lines", "visibility", showTraffic ? "visible" : "none");
+    if (map.getLayer("ofm-traffic-overlay")) map.setLayoutProperty("ofm-traffic-overlay", "visibility", showTraffic ? "visible" : "none");
+    
+  }, [layers]);
 
   return (
     <div className="absolute inset-0 w-full h-full bg-[#0f172a] overflow-hidden">

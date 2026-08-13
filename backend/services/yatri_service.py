@@ -104,6 +104,9 @@ async def _fetch_batch(client: httpx.AsyncClient, train_numbers: List[str]) -> D
                 "nearest_station_id": loc.get("nearest_station_id", ""),
                 "nearest_station_position": loc.get("nearest_station_position", 0),
                 "train_accuracy_status": loc.get("train_accuracy_status", -1),
+                "nearest_station_position_feedback": loc.get("nearest_station_position_feedback", ""),
+                "train_status_feedback": loc.get("train_status_feedback", ""),
+                "train_live_status": loc.get("train_live_status", ""),
             }
 
     return result

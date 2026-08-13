@@ -7,6 +7,7 @@ import { MapStyleType } from "../Map/MapLibreMumbaiMap";
 interface LayerControlProps {
   layers: Record<string, boolean>;
   mapStyle: MapStyleType;
+  statuses: any;
   onToggleLayer: (layerKey: string) => void;
   onSelectMapStyle: (style: MapStyleType) => void;
   isOpen: boolean;
@@ -16,11 +17,13 @@ interface LayerControlProps {
 export const LayerControl: React.FC<LayerControlProps> = ({
   layers,
   mapStyle,
+  statuses,
   onToggleLayer,
   onSelectMapStyle,
   isOpen,
   onToggle
 }) => {
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const layerItems = [
     { key: "buildings", label: "3D Buildings", icon: Building2, color: "text-blue-500" },
@@ -101,7 +104,19 @@ export const LayerControl: React.FC<LayerControlProps> = ({
                 return (
                   <button
                     key={item.key}
-                    onClick={() => onToggleLayer(item.key)}
+                    onClick={() => {
+                      const apiMap: Record<string, string> = {
+                        traffic: 'traffic', weather: 'weather', wind: 'wind', 
+                        aqi: 'aqi', marine: 'marine', flights: 'flights'
+                      };
+                      const api = apiMap[item.key];
+                      if (api && statuses[api] && !statuses[api].enabled) {
+                        setErrorMsg(`Cannot enable: ${item.label} API is OFF`);
+                        setTimeout(() => setErrorMsg(null), 3000);
+                        return;
+                      }
+                      onToggleLayer(item.key);
+                    }}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-light tracking-wide transition-all duration-200 ${
                       active
                         ? "bg-white/5 text-white border border-white/10"
@@ -128,6 +143,13 @@ export const LayerControl: React.FC<LayerControlProps> = ({
                 );
               })}
             </div>
+            
+            {/* Error Message Toast */}
+            {errorMsg && (
+              <div className="mt-3 bg-red-500/10 border border-red-500/20 text-red-400 text-[9px] px-3 py-2 rounded-lg text-center tracking-wide animate-in fade-in slide-in-from-bottom-1">
+                {errorMsg}
+              </div>
+            )}
           </div>
         </div>
       )}

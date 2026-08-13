@@ -31,41 +31,11 @@ logger = logging.getLogger(__name__)
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
-# Background telemetric loop
-async def start_telemetry_loop():
-    logger.info("Starting background live telemetry update loop...")
-    while True:
-        try:
-            weather = await fetch_live_weather()
-            aqi = await fetch_live_air_quality()
-            marine = await fetch_live_marine()
-            traffic = await fetch_live_traffic()
-            
-            # Broadcast to connected WebSocket clients
-            await ws_manager.broadcast({
-                "event": "telemetry_update",
-                "weather": weather,
-                "air_quality": aqi,
-                "marine": marine,
-                "traffic": traffic
-            })
-        except Exception as e:
-            logger.error(f"Error in telemetry loop: {e}")
-        
-        await asyncio.sleep(15)  # Push live pulse every 15 seconds
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup
-    task = asyncio.create_task(start_telemetry_loop())
-    yield
-    # Shutdown
-    task.cancel()
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="1.0.0",
-    lifespan=lifespan
+    version="1.0.0"
 )
 
 app.add_middleware(

@@ -163,6 +163,7 @@ export default function Home() {
         <LayerControl
           layers={layers}
           mapStyle={mapStyle}
+          statuses={statuses}
           onToggleLayer={handleToggleLayer}
           onSelectMapStyle={setMapStyle}
           isOpen={activeRightPanel === 'layers'}

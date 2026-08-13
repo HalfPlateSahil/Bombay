@@ -56,17 +56,45 @@ export function useTelemetryEngine(simTime: string | null = null, simStartTime: 
     yatri: null as any
   });
 
-  const [statuses, setStatuses] = useState<Record<ApiKey, ApiStatus>>({
-    weather: makeInitialStatus(true),
-    aqi: makeInitialStatus(true),
-    marine: makeInitialStatus(true),
-    traffic: makeInitialStatus(true),
-    gis: makeInitialStatus(true),
-    wind: makeInitialStatus(true),
-    trains: makeInitialStatus(true),
-    flights: makeInitialStatus(true),
-    yatri: makeInitialStatus(true),
+  const [statuses, setStatuses] = useState<Record<ApiKey, ApiStatus>>(() => {
+    const defaults = {
+      weather: makeInitialStatus(true),
+      aqi: makeInitialStatus(true),
+      marine: makeInitialStatus(true),
+      traffic: makeInitialStatus(true),
+      gis: makeInitialStatus(true),
+      wind: makeInitialStatus(true),
+      trains: makeInitialStatus(true),
+      flights: makeInitialStatus(true),
+      yatri: makeInitialStatus(true),
+    };
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('mumbai_atlas_api_settings');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const restored: any = { ...defaults };
+          for (const key of Object.keys(parsed)) {
+            if (key in defaults) {
+               restored[key as ApiKey] = makeInitialStatus(parsed[key]);
+            }
+          }
+          return restored;
+        }
+      } catch (e) {}
+    }
+    return defaults;
   });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const toSave = Object.keys(statuses).reduce((acc, key) => {
+        acc[key as ApiKey] = statuses[key as ApiKey].enabled;
+        return acc;
+      }, {} as Record<ApiKey, boolean>);
+      localStorage.setItem('mumbai_atlas_api_settings', JSON.stringify(toSave));
+    }
+  }, [statuses]);
 
   const statusesRef = useRef(statuses);
   useEffect(() => {
@@ -204,7 +232,7 @@ export function useTelemetryEngine(simTime: string | null = null, simStartTime: 
       fetchApi('traffic', fetchTraffic, 'traffic');
       fetchApi('gis', fetchGIS, 'gis');
       fetchApi('wind', fetchWindGrid, 'wind');
-      fetchApi('trains', () => fetchTrains(getEffectiveSimTime()), 'trains');
+      fetchApi('trains', () => fetchTrains(getEffectiveSimTime(), statusesRef.current.yatri?.enabled ?? true), 'trains');
       fetchApi('flights', fetchFlights, 'flights');
       fetchApi('yatri', fetchYatriStatus, 'yatri');
     };
@@ -240,7 +268,7 @@ export function useTelemetryEngine(simTime: string | null = null, simStartTime: 
       if (s.traffic?.enabled && s.traffic.nextFetchIn === 0 && s.traffic.status !== 'FETCHING') fetchApi('traffic', fetchTraffic, 'traffic');
       if (s.gis?.enabled && s.gis.nextFetchIn === 0 && s.gis.status !== 'FETCHING') fetchApi('gis', fetchGIS, 'gis');
       if (s.wind?.enabled && s.wind.nextFetchIn === 0 && s.wind.status !== 'FETCHING') fetchApi('wind', fetchWindGrid, 'wind');
-      if (s.trains?.enabled && s.trains.nextFetchIn === 0 && s.trains.status !== 'FETCHING') fetchApi('trains', () => fetchTrains(getEffectiveSimTime()), 'trains');
+      if (s.trains?.enabled && s.trains.nextFetchIn === 0 && s.trains.status !== 'FETCHING') fetchApi('trains', () => fetchTrains(getEffectiveSimTime(), s.yatri?.enabled ?? true), 'trains');
       if (s.flights?.enabled && s.flights.nextFetchIn === 0 && s.flights.status !== 'FETCHING') fetchApi('flights', fetchFlights, 'flights');
       if (s.yatri?.enabled && s.yatri.nextFetchIn === 0 && s.yatri.status !== 'FETCHING') fetchApi('yatri', fetchYatriStatus, 'yatri');
     };
