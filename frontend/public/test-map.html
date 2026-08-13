@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>OpenFreeMap Test</title>
+  <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+  <link href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; padding: 0; }
+    #map { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: [72.83, 19.05],
+      zoom: 15,
+      pitch: 60,
+      bearing: -15
+    });
+    map.addControl(new maplibregl.NavigationControl());
+    
+    map.on('load', () => {
+      console.log('Map loaded successfully');
+      console.log('Sources:', Object.keys(map.getStyle().sources));
+      console.log('Layers:', map.getStyle().layers.map(l => l.id));
+      
+      // Check if building-3d exists
+      const b3d = map.getLayer('building-3d');
+      console.log('building-3d layer:', b3d ? 'EXISTS' : 'NOT FOUND');
+    });
+    
+    map.on('error', (e) => {
+      console.error('Map error:', e);
+    });
+  </script>
+</body>
+</html>

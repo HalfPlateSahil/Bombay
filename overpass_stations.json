@@ -1,0 +1,658 @@
+{
+  "vasai road": {
+    "lat": 19.3826676,
+    "lon": 72.8320245
+  },
+  "naigaon": {
+    "lat": 19.0095393,
+    "lon": 72.8478709
+  },
+  "bhayandar": {
+    "lat": 19.3101847,
+    "lon": 72.8526988
+  },
+  "kharbhav": {
+    "lat": 19.298321,
+    "lon": 72.9844677
+  },
+  "bhivandi road": {
+    "lat": 19.2688735,
+    "lon": 73.0463121
+  },
+  "dahisar": {
+    "lat": 19.2493572,
+    "lon": 72.8596302
+  },
+  "santa cruz": {
+    "lat": 19.0815223,
+    "lon": 72.8417565
+  },
+  "thane": {
+    "lat": 19.186483,
+    "lon": 72.9757664
+  },
+  "khar road": {
+    "lat": 19.0682411,
+    "lon": 72.8400412
+  },
+  "kalva": {
+    "lat": 19.1952243,
+    "lon": 72.9963331
+  },
+  "kanjur marg": {
+    "lat": 19.1286526,
+    "lon": 72.9280394
+  },
+  "vidyavihar": {
+    "lat": 19.0795422,
+    "lon": 72.8971169
+  },
+  "lower parel": {
+    "lat": 18.9931201,
+    "lon": 72.8314698
+  },
+  "diva junction": {
+    "lat": 19.1887564,
+    "lon": 73.0414169
+  },
+  "grant road": {
+    "lat": 18.9632181,
+    "lon": 72.8180437
+  },
+  "chembur": {
+    "lat": 19.0541298,
+    "lon": 72.8928064
+  },
+  "bhakti park": {
+    "lat": 19.028972,
+    "lon": 72.8775722
+  },
+  "wadala depot": {
+    "lat": 19.0388244,
+    "lon": 72.8740249
+  },
+  "sewri": {
+    "lat": 18.9987796,
+    "lon": 72.8544218
+  },
+  "cotton green": {
+    "lat": 18.9871866,
+    "lon": 72.8438965
+  },
+  "mumbra": {
+    "lat": 19.1899425,
+    "lon": 73.0230752
+  },
+  "dativali": {
+    "lat": 19.1871047,
+    "lon": 73.0591806
+  },
+  "mansarovar": {
+    "lat": 19.0164338,
+    "lon": 73.0806552
+  },
+  "mysore colony": {
+    "lat": 19.0277168,
+    "lon": 72.8914397
+  },
+  "mulund": {
+    "lat": 19.1721366,
+    "lon": 72.9566971
+  },
+  "khandeshwar": {
+    "lat": 19.0073498,
+    "lon": 73.0952827
+  },
+  "king's circle": {
+    "lat": 19.0316822,
+    "lon": 72.8577375
+  },
+  "sandhurst road": {
+    "lat": 18.9609243,
+    "lon": 72.8393719
+  },
+  "thakurli": {
+    "lat": 19.2262813,
+    "lon": 73.0980174
+  },
+  "dockyard road": {
+    "lat": 18.9674767,
+    "lon": 72.8445477
+  },
+  "reay road": {
+    "lat": 18.9775506,
+    "lon": 72.8441011
+  },
+  "currey road": {
+    "lat": 18.9937486,
+    "lon": 72.8328556
+  },
+  "mankhurd": {
+    "lat": 19.0492166,
+    "lon": 72.931231
+  },
+  "nahur": {
+    "lat": 19.1546402,
+    "lon": 72.9466525
+  },
+  "bandra": {
+    "lat": 19.0549792,
+    "lon": 72.8402203
+  },
+  "byculla": {
+    "lat": 18.9766219,
+    "lon": 72.8327936
+  },
+  "charni road": {
+    "lat": 18.9518437,
+    "lon": 72.8182401
+  },
+  "dadar": {
+    "lat": 19.0236238,
+    "lon": 72.8392214
+  },
+  "mahim junction": {
+    "lat": 19.0406634,
+    "lon": 72.8466038
+  },
+  "marine lines": {
+    "lat": 18.945764,
+    "lon": 72.8237193
+  },
+  "mumbai central": {
+    "lat": 18.9695855,
+    "lon": 72.8193152
+  },
+  "vile parle": {
+    "lat": 19.0999098,
+    "lon": 72.8440038
+  },
+  "virar": {
+    "lat": 19.4553059,
+    "lon": 72.811816
+  },
+  "bharat petroleum": {
+    "lat": 19.0352839,
+    "lon": 72.8955553
+  },
+  "vnp & rc marg junction": {
+    "lat": 19.0526419,
+    "lon": 72.8942789
+  },
+  "chuna bhatti": {
+    "lat": 19.0517703,
+    "lon": 72.8690974
+  },
+  "sion": {
+    "lat": 19.0465213,
+    "lon": 72.8632834
+  },
+  "kurla": {
+    "lat": 19.0652797,
+    "lon": 72.8793805
+  },
+  "fertilizer township": {
+    "lat": 19.0438776,
+    "lon": 72.893456
+  },
+  "govandi": {
+    "lat": 19.0553688,
+    "lon": 72.9150702
+  },
+  "bhandup": {
+    "lat": 19.142757,
+    "lon": 72.9376543
+  },
+  "borivali": {
+    "lat": 19.229068,
+    "lon": 72.8573628
+  },
+  "kandivali": {
+    "lat": 19.2041136,
+    "lon": 72.8517376
+  },
+  "malad": {
+    "lat": 19.1867193,
+    "lon": 72.8485884
+  },
+  "goregaon": {
+    "lat": 19.1648688,
+    "lon": 72.8495492
+  },
+  "prabhadevi": {
+    "lat": 19.0074717,
+    "lon": 72.8358965
+  },
+  "chinchpokli": {
+    "lat": 18.9871984,
+    "lon": 72.8326716
+  },
+  "parel": {
+    "lat": 19.0094817,
+    "lon": 72.8376614
+  },
+  "tilak nagar": {
+    "lat": 19.0657855,
+    "lon": 72.8904702
+  },
+  "wadala bridge": {
+    "lat": 19.0174849,
+    "lon": 72.8593168
+  },
+  "acharya atre nagar": {
+    "lat": 19.0236472,
+    "lon": 72.8637994
+  },
+  "ambedkar nagar": {
+    "lat": 19.0015921,
+    "lon": 72.8442272
+  },
+  "dadar east": {
+    "lat": 19.0162531,
+    "lon": 72.8522274
+  },
+  "guru tegh bahadur nagar": {
+    "lat": 19.0380048,
+    "lon": 72.8643455
+  },
+  "sant gadge maharaj chowk": {
+    "lat": 18.9830921,
+    "lon": 72.8285867
+  },
+  "mint colony": {
+    "lat": 18.9945142,
+    "lon": 72.8433086
+  },
+  "vikhroli": {
+    "lat": 19.1114795,
+    "lon": 72.928021
+  },
+  "churchgate": {
+    "lat": 18.9314946,
+    "lon": 72.8269394
+  },
+  "matunga": {
+    "lat": 19.0274356,
+    "lon": 72.8501467
+  },
+  "matunga road": {
+    "lat": 19.0278149,
+    "lon": 72.8466813
+  },
+  "mahalaxmi": {
+    "lat": 18.979467,
+    "lon": 72.8254006
+  },
+  "ghatkopar": {
+    "lat": 19.0856928,
+    "lon": 72.9083668
+  },
+  "nalla sopara": {
+    "lat": 19.4178997,
+    "lon": 72.8185693
+  },
+  "dombivli": {
+    "lat": 19.2180493,
+    "lon": 73.0861355
+  },
+  "kopar": {
+    "lat": 19.212423,
+    "lon": 73.078865
+  },
+  "mira road": {
+    "lat": 19.2816975,
+    "lon": 72.8560676
+  },
+  "dahanukarwadi": {
+    "lat": 19.2062315,
+    "lon": 72.8348068
+  },
+  "kandivali (west)": {
+    "lat": 19.2140036,
+    "lon": 72.8373054
+  },
+  "borivali (west)": {
+    "lat": 19.2313925,
+    "lon": 72.8408607
+  },
+  "mandapeshwar - i.c. colony": {
+    "lat": 19.2495856,
+    "lon": 72.8458001
+  },
+  "kandarpada": {
+    "lat": 19.2566337,
+    "lon": 72.850504
+  },
+  "anand nagar": {
+    "lat": 19.2572087,
+    "lon": 72.8663486
+  },
+  "diamond garden": {
+    "lat": 19.0517191,
+    "lon": 72.9018378
+  },
+  "shimpoli": {
+    "lat": 19.2228332,
+    "lon": 72.8409432
+  },
+  "eksar": {
+    "lat": 19.2403773,
+    "lon": 72.8434456
+  },
+  "csmi airport international t2": {
+    "lat": 19.1023335,
+    "lon": 72.8744692
+  },
+  "bandra kurla complex (bkc)": {
+    "lat": 19.0606629,
+    "lon": 72.8546797
+  },
+  "juichandra": {
+    "lat": 19.3604641,
+    "lon": 72.8723218
+  },
+  "kaman road": {
+    "lat": 19.3366555,
+    "lon": 72.9190837
+  },
+  "andheri": {
+    "lat": 19.1196976,
+    "lon": 72.8464205
+  },
+  "seepz": {
+    "lat": 19.1259985,
+    "lon": 72.8737266
+  },
+  "midc - andheri": {
+    "lat": 19.1173537,
+    "lon": 72.8735966
+  },
+  "marol naka (line 3)": {
+    "lat": 19.1085041,
+    "lon": 72.878578
+  },
+  "ram mandir": {
+    "lat": 19.151023,
+    "lon": 72.8501467
+  },
+  "andheri l1": {
+    "lat": 19.1205638,
+    "lon": 72.8488433
+  },
+  "lokmanya tilak terminus": {
+    "lat": 19.0694658,
+    "lon": 72.8919779
+  },
+  "nilaje": {
+    "lat": 19.1544274,
+    "lon": 73.0803599
+  },
+  "taloje panchanand": {
+    "lat": 19.079148,
+    "lon": 73.0878581
+  },
+  "ranjanpada": {
+    "lat": 18.9092584,
+    "lon": 73.0158486
+  },
+  "kapurbawdi station": {
+    "lat": 19.2241429,
+    "lon": 72.9774245
+  },
+  "gaimukh station": {
+    "lat": 19.2844346,
+    "lon": 72.9468083
+  },
+  "gowniwada station": {
+    "lat": 19.2767469,
+    "lon": 72.9582272
+  },
+  "azad nagar bus stop": {
+    "lat": 19.2410366,
+    "lon": 72.9809993
+  },
+  "subhash chandra bose ground": {
+    "lat": 19.294238,
+    "lon": 72.8431291
+  },
+  "airport colony station": {
+    "lat": 19.1058178,
+    "lon": 72.854017
+  },
+  "anik nagar bus depot station": {
+    "lat": 19.0458265,
+    "lon": 72.8786341
+  },
+  "dahisar (east) [line 7]": {
+    "lat": 19.2506981,
+    "lon": 72.8666664
+  },
+  "dahisar (east) [line 2]": {
+    "lat": 19.2517331,
+    "lon": 72.8673322
+  },
+  "aarey": {
+    "lat": 19.1693242,
+    "lon": 72.8587918
+  },
+  "dindoshi": {
+    "lat": 19.1797579,
+    "lon": 72.8582976
+  },
+  "kurar": {
+    "lat": 19.1872999,
+    "lon": 72.8584547
+  },
+  "akurli": {
+    "lat": 19.1981585,
+    "lon": 72.8604905
+  },
+  "poisar": {
+    "lat": 19.2035171,
+    "lon": 72.8631041
+  },
+  "magathane": {
+    "lat": 19.2167968,
+    "lon": 72.8668012
+  },
+  "devipada": {
+    "lat": 19.2240357,
+    "lon": 72.8643251
+  },
+  "rashtriya udyan": {
+    "lat": 19.2346141,
+    "lon": 72.8631372
+  },
+  "ovaripada": {
+    "lat": 19.2431487,
+    "lon": 72.8641377
+  },
+  "shahid bhagat singh garden": {
+    "lat": 19.2948117,
+    "lon": 72.849362
+  },
+  "gundavali": {
+    "lat": 19.1145125,
+    "lon": 72.8551556
+  },
+  "mogra": {
+    "lat": 19.1284364,
+    "lon": 72.8554558
+  },
+  "jogeshwari (east)": {
+    "lat": 19.1429455,
+    "lon": 72.855185
+  },
+  "goregaon (east)": {
+    "lat": 19.1524492,
+    "lon": 72.8565966
+  },
+  "andheri (west)": {
+    "lat": 19.1291337,
+    "lon": 72.8314307
+  },
+  "lower oshiwara": {
+    "lat": 19.1406979,
+    "lon": 72.8317139
+  },
+  "oshiwara": {
+    "lat": 19.1460351,
+    "lon": 72.833952
+  },
+  "goregaon (west)": {
+    "lat": 19.1530241,
+    "lon": 72.8356664
+  },
+  "lower malad": {
+    "lat": 19.1730984,
+    "lon": 72.8364801
+  },
+  "malad (west)": {
+    "lat": 19.1852851,
+    "lon": 72.8358611
+  },
+  "valnai-meeth chowky": {
+    "lat": 19.1968293,
+    "lon": 72.8337752
+  },
+  "cbd belapur": {
+    "lat": 19.0205999,
+    "lon": 73.0402663
+  },
+  "rbi colony": {
+    "lat": 19.0229846,
+    "lon": 73.0479433
+  },
+  "bandra colony": {
+    "lat": 19.0699627,
+    "lon": 72.8493601
+  },
+  "santacruz": {
+    "lat": 19.0792887,
+    "lon": 72.8471185
+  },
+  "csmi airport domestic t1": {
+    "lat": 19.093899,
+    "lon": 72.8535765
+  },
+  "sahar road": {
+    "lat": 19.102196,
+    "lon": 72.8652361
+  },
+  "masjid": {
+    "lat": 18.9522949,
+    "lon": 72.8381771
+  },
+  "mumbai csmt": {
+    "lat": 18.9404925,
+    "lon": 72.8357856
+  },
+  "kharghar": {
+    "lat": 19.0258415,
+    "lon": 73.0593001
+  },
+  "seawoods": {
+    "lat": 19.0218192,
+    "lon": 73.0191588
+  },
+  "jogeshwari (harbour line)": {
+    "lat": 19.1411537,
+    "lon": 72.8494209
+  },
+  "jogeshwari (western line)": {
+    "lat": 19.1361144,
+    "lon": 72.848936
+  },
+  "bangur nagar": {
+    "lat": 19.1624723,
+    "lon": 72.8348708
+  },
+  "shitala devi mandir": {
+    "lat": 19.0384641,
+    "lon": 72.8419646
+  },
+  "dharavi": {
+    "lat": 19.0462612,
+    "lon": 72.849741
+  },
+  "acharya atre chowk": {
+    "lat": 18.9978202,
+    "lon": 72.8177201
+  },
+  "worli": {
+    "lat": 19.0086057,
+    "lon": 72.8192741
+  },
+  "siddhivinayak temple": {
+    "lat": 19.0158935,
+    "lon": 72.8309199
+  },
+  "jagannath shankar sheth metro": {
+    "lat": 18.9699923,
+    "lon": 72.8211795
+  },
+  "science centre": {
+    "lat": 18.9908949,
+    "lon": 72.8213521
+  },
+  "cuffe parade": {
+    "lat": 18.9135692,
+    "lon": 72.8207152
+  },
+  "vidhan bhavan": {
+    "lat": 18.9247813,
+    "lon": 72.8254934
+  },
+  "hutatma chowk": {
+    "lat": 18.9341849,
+    "lon": 72.8325037
+  },
+  "chhatrapati shivaji maharaj terminus": {
+    "lat": 18.9408329,
+    "lon": 72.831861
+  },
+  "kalbadevi": {
+    "lat": 18.946329,
+    "lon": 72.827193
+  },
+  "girgaon": {
+    "lat": 18.9521015,
+    "lon": 72.8222065
+  },
+  "mandale": {
+    "lat": 19.0495916,
+    "lon": 72.9386612
+  },
+  "shivaji chowk (chembur)": {
+    "lat": 19.0479383,
+    "lon": 72.9069806
+  },
+  "deonar": {
+    "lat": 19.0448332,
+    "lon": 72.917495
+  },
+  "antop hill": {
+    "lat": 19.0301805,
+    "lon": 72.8669504
+  },
+  "dahisar (east) [line 9]": {
+    "lat": 19.2510803,
+    "lon": 72.8674521
+  },
+  "pandurang wadi": {
+    "lat": 19.2600987,
+    "lon": 72.8726403
+  },
+  "miragaon": {
+    "lat": 19.2710068,
+    "lon": 72.8806976
+  },
+  "kashigaon": {
+    "lat": 19.2776661,
+    "lon": 72.8802398
+  },
+  "pendhar": {
+    "lat": 19.0722115,
+    "lon": 73.0978436
+  }
+}
