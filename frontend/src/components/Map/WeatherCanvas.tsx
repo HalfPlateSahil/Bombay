@@ -3,7 +3,6 @@
 import React, { useEffect, useRef } from "react";
 import { WeatherData, AQIData, MarineData, WindGridPoint } from "../../types";
 import { DisasterEngineManager } from "../../modules/disasterSystem";
-import { FloodModule } from "../../modules/flood/FloodModule";
 import { CycloneModule } from "../../modules/cyclone/CycloneModule";
 import { EarthquakeModule } from "../../modules/earthquake/EarthquakeModule";
 import { FireModule } from "../../modules/fire/FireModule";
@@ -320,8 +319,7 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
     }
 
     let plugin = null;
-    if (activeDisaster === "flood") plugin = new FloodModule();
-    else if (activeDisaster === "cyclone") plugin = new CycloneModule();
+    if (activeDisaster === "cyclone") plugin = new CycloneModule();
     else if (activeDisaster === "earthquake") plugin = new EarthquakeModule();
     else if (activeDisaster === "fire") plugin = new FireModule();
     else if (activeDisaster === "climate") plugin = new ClimateModule();

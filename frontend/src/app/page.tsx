@@ -7,13 +7,11 @@ import { TelemetryCards } from "../components/UI/TelemetryCards";
 import { LayerControl } from "../components/UI/LayerControl";
 import { DisasterControlPanel } from "../components/UI/DisasterControlPanel";
 import { ImpactDashboard } from "../components/UI/ImpactDashboard";
-import { MapLibreMumbaiMap, MapStyleType } from "../components/Map/MapLibreMumbaiMap";
+import { MumbaiMap, MapStyleType } from "../components/Map/MumbaiMap";
 import { WeatherCanvas } from "../components/Map/WeatherCanvas";
 import { WeatherData, AQIData, MarineData, TrafficData, SimulationResult, WindGridPoint } from "../types";
 import { postSimulation } from "../services/api";
 import { useTelemetryEngine } from "../hooks/useTelemetryEngine";
-import { useFloodSimulation } from "../hooks/useFloodSimulation";
-import { FloodControlPanel } from "../components/flood/FloodControlPanel";
 import { SystemConsole } from "../components/UI/SystemConsole";
 import { SystemSettings } from "../components/UI/SystemSettings";
 import { Settings2, Terminal } from "lucide-react";
@@ -35,9 +33,6 @@ export default function Home() {
   // Telemetric state managed by custom engine
   const { data: tData, statuses, toggleApi } = useTelemetryEngine(simTime, simStartTime);
   const { weather, aqi, marine, traffic, gis: gisData, wind: windGrid } = tData;
-
-  // Local Flood Simulation Engine
-  const floodSim = useFloodSimulation();
 
   // System UI state
   const [showConsole, setShowConsole] = useState(false);
@@ -124,6 +119,11 @@ export default function Home() {
     setActiveRightPanel(null);
   };
 
+  const handleLiveParamUpdate = (disasterType: string, params: any) => {
+    setActiveDisaster(disasterType);
+    setSimulationParams((prev: any) => ({ ...prev, ...params }));
+  };
+
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-slate-900 select-none">
       {/* Top Header */}
@@ -145,7 +145,7 @@ export default function Home() {
       <div className="absolute top-20 right-5 z-20 pointer-events-none flex items-start gap-2">
         
         {/* Analysis Button & Dropdown (Only in disaster mode when results exist) */}
-        {mode === "disaster" && (simulationResult || floodSim.stats) && (
+        {mode === "disaster" && simulationResult && (
           <div className="relative pointer-events-auto">
             <button
               onClick={() => setActiveRightPanel(activeRightPanel === 'analytics' ? null : 'analytics')}
@@ -157,7 +157,7 @@ export default function Home() {
             
             {activeRightPanel === 'analytics' && (
               <ImpactDashboard
-                result={(floodSim.stats as any) || simulationResult}
+                result={simulationResult}
                 onClose={() => setActiveRightPanel(null)}
               />
             )}
@@ -178,19 +178,12 @@ export default function Home() {
 
       {/* Disaster Control Workbench (Shown in Disaster Mode) */}
       {mode === "disaster" && (
-        <FloodControlPanel
-          onStart={(params) => {
-            setActiveDisaster('flood');
-            setSimulationParams(params);
-            floodSim.start(params);
-          }}
-          onPause={floodSim.pause}
-          onReset={() => {
-            handleResetSimulation();
-            floodSim.reset();
-          }}
+        <DisasterControlPanel
+          onRunSimulation={handleRunSimulation}
+          onResetSimulation={handleResetSimulation}
           currentEpicenter={selectedLocation}
-          isRunning={floodSim.isRunning}
+          isSimulating={isSimulating}
+          onLiveParamUpdate={handleLiveParamUpdate}
         />
       )}
 
@@ -209,7 +202,7 @@ export default function Home() {
       />
 
       {/* Interactive 3D OpenFreeMap & Satellite Map View of Mumbai */}
-      <MapLibreMumbaiMap
+      <MumbaiMap
         layers={layers}
         traffic={traffic}
         aqi={aqi}
@@ -221,7 +214,6 @@ export default function Home() {
         activeDisaster={activeDisaster}
         simulationResult={simulationResult}
         simulationParams={simulationParams}
-        floodGrid={floodSim.gridData}
         onMapClick={handleMapClick}
         onMapLoad={setMapInstance}
       />

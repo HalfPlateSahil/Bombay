@@ -159,10 +159,14 @@ export const DisasterControlPanel: React.FC<DisasterControlPanelProps> = ({
                 <input
                   type="range"
                   min="1.5"
-                  max="5.5"
+                  max="15.5"
                   step="0.1"
                   value={tideHeightM}
-                  onChange={(e) => setTideHeightM(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setTideHeightM(val);
+                    if (onLiveParamUpdate) onLiveParamUpdate("flood", { tide_height_m: val });
+                  }}
                   className="w-full accent-cyan-400 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
                 />
               </div>

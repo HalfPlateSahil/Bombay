@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Layers, Building2, Car, Train, CloudRain, Eye, Waves, MapPin, Sparkles, Map, Globe, Moon, Sun, Compass, Wind, Plane } from "lucide-react";
-import { MapStyleType } from "../Map/MapLibreMumbaiMap";
+import { MapStyleType } from "../Map/MumbaiMap";
 
 interface LayerControlProps {
   layers: Record<string, boolean>;

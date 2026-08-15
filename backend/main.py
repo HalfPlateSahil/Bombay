@@ -23,6 +23,8 @@ from backend.services.disaster_engine import (
     run_fire_simulation,
     run_sea_level_rise_simulation
 )
+from backend.services.floodmap_service import process_flood_tile
+from fastapi.responses import Response
 from backend.websocket.manager import ws_manager
 
 logging.basicConfig(level=logging.INFO)
@@ -94,6 +96,15 @@ async def get_flight_photo_route(icao24: str):
 @app.get(f"{settings.API_PREFIX}/gis/mumbai")
 def get_gis():
     return get_mumbai_gis_data()
+
+@app.get(f"{settings.API_PREFIX}/floodmap/{{z}}/{{x}}/{{y}}")
+async def get_floodmap_tile(z: int, x: int, y: int, elev: float = Query(0.0)):
+    try:
+        img_bytes = await process_flood_tile(z, x, y, elev)
+        return Response(content=img_bytes, media_type="image/png")
+    except Exception as e:
+        logger.error(f"Error generating flood tile: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post(f"{settings.API_PREFIX}/simulation/run")
 def run_simulation(payload: dict):
