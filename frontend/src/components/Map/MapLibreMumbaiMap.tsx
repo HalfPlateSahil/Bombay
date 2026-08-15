@@ -3,6 +3,8 @@
 import React, { useEffect, useRef } from "react";
 import { TrafficData, AQIData } from "../../types";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { RainRenderer } from "../../visualization/flood/RainRenderer";
+import { FloodWaterRenderer } from "../../visualization/flood/FloodWaterRenderer";
 
 export type MapStyleType = "liberty" | "dark" | "satellite" | "bright" | "positron";
 
@@ -17,6 +19,13 @@ interface MapLibreMumbaiMapProps {
   selectedLocation: { name: string; lat: number; lon: number } | null;
   activeDisaster?: string | null;
   simulationResult?: any;
+  simulationParams?: any;
+  floodGrid?: {
+    width: number;
+    height: number;
+    cellSize: number;
+    waterDepth: Float32Array | null;
+  };
   onMapClick: (lat: number, lon: number) => void;
   onMapLoad?: (map: any) => void;
 }
@@ -67,11 +76,15 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
   selectedLocation,
   activeDisaster,
   simulationResult,
+  simulationParams,
+  floodGrid,
   onMapClick,
   onMapLoad
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
+  const rainRendererRef = useRef<RainRenderer | null>(null);
+  const floodWaterRendererRef = useRef<FloodWaterRenderer | null>(null);
   
   // Flight Animation Refs
   const flightDataRef = useRef<any>(null);
@@ -608,6 +621,37 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
   };
 
   // ──────────────────────────────────────────────────────────────────────────
+  // Flood Simulation Grid Layer (Custom WebGL)
+  // ──────────────────────────────────────────────────────────────────────────
+  const updateFloodSimulation = (map: any, gridData: any, active: boolean) => {
+    if (!map || !map.isStyleLoaded()) return;
+
+    if (!active) {
+      if (map.getLayer("flood-water-layer")) {
+        map.setLayoutProperty("flood-water-layer", "visibility", "none");
+      }
+      return;
+    }
+
+    if (!floodWaterRendererRef.current) {
+      floodWaterRendererRef.current = new FloodWaterRenderer();
+    }
+
+    if (!map.getLayer("flood-water-layer")) {
+      map.addLayer(
+          floodWaterRendererRef.current as any, 
+          map.getLayer("ofm-3d-buildings") ? "ofm-3d-buildings" : undefined
+      );
+    } else {
+      map.setLayoutProperty("flood-water-layer", "visibility", "visible");
+    }
+
+    if (gridData && gridData.waterDepth) {
+      floodWaterRendererRef.current.setGridData(gridData);
+    }
+  };
+
+  // ──────────────────────────────────────────────────────────────────────────
   // Train Animation Loop
   // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -1032,6 +1076,11 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
         setupFlights(map, flights, layers.flights ?? false);
         // Setup Disaster Impact Zones
         setupImpactZones(map, activeDisaster, simulationResult);
+        // Setup Flood Engine
+        updateFloodSimulation(map, floodGrid, activeDisaster === "flood");
+        
+        // Initialize RainRenderer
+        rainRendererRef.current = new RainRenderer(map);
         
         if (onMapLoad) {
           onMapLoad(map);
@@ -1250,6 +1299,18 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
   // ──────────────────────────────────────────────────────────────────────────
   // External Telemetry Change Listeners
   // ──────────────────────────────────────────────────────────────────────────
+  
+  // Sync Rain Renderer based on simulation params
+  useEffect(() => {
+    if (rainRendererRef.current) {
+      if (activeDisaster === "flood" && simulationParams) {
+        rainRendererRef.current.setIntensity(simulationParams.rainfallMmHr || 0);
+      } else {
+        rainRendererRef.current.setIntensity(0);
+      }
+    }
+  }, [activeDisaster, simulationParams]);
+  
   useEffect(() => {
     if (!mapRef.current || !mapRef.current.isStyleLoaded()) return;
     const mapInstance = mapRef.current;
@@ -1293,8 +1354,33 @@ export const MapLibreMumbaiMap: React.FC<MapLibreMumbaiMapProps> = ({
     if (!map) return;
     if (map.isStyleLoaded()) {
       setupImpactZones(map, activeDisaster, simulationResult);
+      updateFloodSimulation(map, floodGrid, activeDisaster === "flood");
+      
+      // Update building tinting for flood
+      if (activeDisaster === "flood" && floodGrid?.waterDepth && map.getLayer("ofm-3d-buildings")) {
+          map.setPaintProperty("ofm-3d-buildings", "fill-extrusion-color", [
+            "interpolate",
+            ["linear"],
+            ["coalesce", ["get", "render_height"], ["get", "height"], 15],
+            0,  isDarkStyle(mapStyle) ? "#172554" : "#bfdbfe",
+            50, isDarkStyle(mapStyle) ? "#1e3a8a" : "#93c5fd",
+            100, isDarkStyle(mapStyle) ? "#1d4ed8" : "#60a5fa"
+          ]);
+      } else if (map.getLayer("ofm-3d-buildings")) {
+         // reset to default (using dark style logic)
+         map.setPaintProperty("ofm-3d-buildings", "fill-extrusion-color", [
+            "interpolate",
+            ["linear"],
+            ["coalesce", ["get", "render_height"], ["get", "height"], 15],
+            0,  isDarkStyle(mapStyle) ? "#0e7490" : "#cbd5e1",
+            20, isDarkStyle(mapStyle) ? "#0891b2" : "#94a3b8",
+            50, isDarkStyle(mapStyle) ? "#06b6d4" : "#64748b",
+            100, isDarkStyle(mapStyle) ? "#22d3ee" : "#475569",
+            200, isDarkStyle(mapStyle) ? "#67e8f9" : "#334155"
+         ]);
+      }
     }
-  }, [activeDisaster, simulationResult]);
+  }, [activeDisaster, simulationResult, floodGrid, mapStyle]);
 
   // ──────────────────────────────────────────────────────────────────────────
   // Camera FlyTo on location selection

@@ -12,6 +12,8 @@ import { WeatherCanvas } from "../components/Map/WeatherCanvas";
 import { WeatherData, AQIData, MarineData, TrafficData, SimulationResult, WindGridPoint } from "../types";
 import { postSimulation } from "../services/api";
 import { useTelemetryEngine } from "../hooks/useTelemetryEngine";
+import { useFloodSimulation } from "../hooks/useFloodSimulation";
+import { FloodControlPanel } from "../components/flood/FloodControlPanel";
 import { SystemConsole } from "../components/UI/SystemConsole";
 import { SystemSettings } from "../components/UI/SystemSettings";
 import { Settings2, Terminal } from "lucide-react";
@@ -33,6 +35,9 @@ export default function Home() {
   // Telemetric state managed by custom engine
   const { data: tData, statuses, toggleApi } = useTelemetryEngine(simTime, simStartTime);
   const { weather, aqi, marine, traffic, gis: gisData, wind: windGrid } = tData;
+
+  // Local Flood Simulation Engine
+  const floodSim = useFloodSimulation();
 
   // System UI state
   const [showConsole, setShowConsole] = useState(false);
@@ -140,7 +145,7 @@ export default function Home() {
       <div className="absolute top-20 right-5 z-20 pointer-events-none flex items-start gap-2">
         
         {/* Analysis Button & Dropdown (Only in disaster mode when results exist) */}
-        {mode === "disaster" && simulationResult && (
+        {mode === "disaster" && (simulationResult || floodSim.stats) && (
           <div className="relative pointer-events-auto">
             <button
               onClick={() => setActiveRightPanel(activeRightPanel === 'analytics' ? null : 'analytics')}
@@ -152,7 +157,7 @@ export default function Home() {
             
             {activeRightPanel === 'analytics' && (
               <ImpactDashboard
-                result={simulationResult}
+                result={(floodSim.stats as any) || simulationResult}
                 onClose={() => setActiveRightPanel(null)}
               />
             )}
@@ -173,16 +178,19 @@ export default function Home() {
 
       {/* Disaster Control Workbench (Shown in Disaster Mode) */}
       {mode === "disaster" && (
-        <DisasterControlPanel
-          onRunSimulation={handleRunSimulation}
-          onResetSimulation={handleResetSimulation}
-          currentEpicenter={selectedLocation}
-          isSimulating={isSimulating}
-          onLiveParamUpdate={(type, params) => {
-            if (activeDisaster === type) {
-              setSimulationParams((prev: any) => ({ ...prev, ...params }));
-            }
+        <FloodControlPanel
+          onStart={(params) => {
+            setActiveDisaster('flood');
+            setSimulationParams(params);
+            floodSim.start(params);
           }}
+          onPause={floodSim.pause}
+          onReset={() => {
+            handleResetSimulation();
+            floodSim.reset();
+          }}
+          currentEpicenter={selectedLocation}
+          isRunning={floodSim.isRunning}
         />
       )}
 
@@ -212,6 +220,8 @@ export default function Home() {
         selectedLocation={selectedLocation}
         activeDisaster={activeDisaster}
         simulationResult={simulationResult}
+        simulationParams={simulationParams}
+        floodGrid={floodSim.gridData}
         onMapClick={handleMapClick}
         onMapLoad={setMapInstance}
       />
