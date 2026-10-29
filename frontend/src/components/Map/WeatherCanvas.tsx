@@ -37,6 +37,28 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
   const managerRef = useRef<DisasterEngineManager | null>(null);
   const prevCycloneWindRef = useRef<number>(0);
 
+  // Authoritative refs to eliminate particle teardown and frame stutter across layer toggles
+  const layersRef = useRef(layers);
+  layersRef.current = layers;
+  const weatherRef = useRef(weather);
+  weatherRef.current = weather;
+  const aqiRef = useRef(aqi);
+  aqiRef.current = aqi;
+  const marineRef = useRef(marine);
+  marineRef.current = marine;
+  const activeDisasterRef = useRef(activeDisaster);
+  activeDisasterRef.current = activeDisaster;
+  const simulationParamsRef = useRef(simulationParams);
+  simulationParamsRef.current = simulationParams;
+  const simulationResultRef = useRef(simulationResult);
+  simulationResultRef.current = simulationResult;
+  const mapInstanceRef = useRef(mapInstance);
+  mapInstanceRef.current = mapInstance;
+  const selectedLocationRef = useRef(selectedLocation);
+  selectedLocationRef.current = selectedLocation;
+  const windGridRef = useRef(windGrid);
+  windGridRef.current = windGrid;
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -90,13 +112,23 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        const curLayers = layersRef.current;
+        const curWeather = weatherRef.current;
+        const curMarine = marineRef.current;
+        const curDisaster = activeDisasterRef.current;
+        const curParams = simulationParamsRef.current;
+        const curResult = simulationResultRef.current;
+        const curMap = mapInstanceRef.current;
+        const curLocation = selectedLocationRef.current;
+        const curWindGrid = windGridRef.current;
+
         // 1. Live Weather Overlay or Flood Disaster Rain Particles
-        const isFlood = activeDisaster === "flood";
-        const floodRain = simulationParams?.rainfall_mm_hr ?? 120;
-        const showRain = Boolean(layers.weather || isFlood);
+        const isFlood = curDisaster === "flood";
+        const floodRain = curParams?.rainfall_mm_hr ?? 120;
+        const showRain = Boolean(curLayers.weather || isFlood);
 
         if (showRain) {
-          const currentRain = (weather && weather.rainfall > 0) ? weather.rainfall : (layers.weather ? 8 : 0);
+          const currentRain = (curWeather && curWeather.rainfall > 0) ? curWeather.rainfall : (curLayers.weather ? 8 : 0);
           const intensityRatio = isFlood 
             ? Math.min(1.0, Math.max(0.25, floodRain / 180.0))
             : Math.min(1.0, Math.max(0.3, currentRain / 40.0));
@@ -121,12 +153,12 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
         }
 
         // 2. Geographic Wind Vector Field with Data-Driven Heatmap
-        if (layers.wind && windGrid && windGrid.length > 0 && mapInstance) {
+        if (curLayers.wind && curWindGrid && curWindGrid.length > 0 && curMap) {
           
           // 2a. Draw the Color-Coded Heatmap Overlay first
           ctx.globalCompositeOperation = "screen";
-          for (const pt of windGrid) {
-            const px = mapInstance.project([pt.lon, pt.lat]);
+          for (const pt of curWindGrid) {
+            const px = curMap.project([pt.lon, pt.lat]);
             // Skip if point is too far off-screen to optimize
             if (px.x < -500 || px.x > canvas.width + 500 || px.y < -500 || px.y > canvas.height + 500) continue;
             
@@ -149,8 +181,8 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
 
           // 2a.5 Draw the massive Cyclone Heatmap if active
           let cycloneMaxWind = 0;
-          if (activeDisaster === "cyclone" && selectedLocation) {
-            cycloneMaxWind = simulationParams?.wind_speed_kmh || simulationResult?.landfall_wind_kmh || 165;
+          if (curDisaster === "cyclone" && curLocation) {
+            cycloneMaxWind = curParams?.wind_speed_kmh || curResult?.landfall_wind_kmh || 165;
             
             // Instantly clear particle trails if the cyclone wind speed drastically changes (for fast visual updates)
             if (Math.abs(prevCycloneWindRef.current - cycloneMaxWind) > 5) {
@@ -158,7 +190,7 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
               prevCycloneWindRef.current = cycloneMaxWind;
             }
 
-            const px = mapInstance.project([selectedLocation.lon, selectedLocation.lat]);
+            const px = curMap.project([curLocation.lon, curLocation.lat]);
             
             // Cyclone heatmap size scales massively with intensity
             const cRadius = (cycloneMaxWind / 100.0) * canvas.width * 0.4; 
@@ -187,7 +219,7 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
 
             // Inverse Distance Weighting to interpolate exact wind speed/dir at particle's lat/lon
             let sumSpeed = 0, sumDirX = 0, sumDirY = 0, sumWeight = 0;
-            for (const pt of windGrid) {
+            for (const pt of curWindGrid) {
               const d2 = Math.pow(pt.lat - wp.lat, 2) + Math.pow(pt.lon - wp.lon, 2);
               const weight = 1 / (d2 + 0.000001);
               sumSpeed += pt.wind_speed * weight;
@@ -205,9 +237,9 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
             let finalRad = interpRad;
             
             // --- CYCLONE WIND INTERFERENCE PHYSICS (Superposition) ---
-            if (activeDisaster === "cyclone" && selectedLocation) {
-              const dx = selectedLocation.lon - wp.lon;
-              const dy = selectedLocation.lat - wp.lat; 
+            if (curDisaster === "cyclone" && curLocation) {
+              const dx = curLocation.lon - wp.lon;
+              const dy = curLocation.lat - wp.lat; 
               const dist = Math.sqrt(dx * dx + dy * dy);
               
               // Influence radius scales with storm intensity
@@ -219,8 +251,6 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
 
               if (dist < influenceRadius) {
                 // Spiral Angle: Tangent + Tiny Inward Draft (counter-clockwise)
-                // Math.atan2(dy,dx) points to center. Subtracting PI/2 makes it exactly tangent.
-                // Adding 0.15 gives it a beautiful, tight inward spiral like Zoom Earth.
                 const angleToCenter = Math.atan2(dy, dx);
                 const spiralRad = angleToCenter - (Math.PI / 2) + 0.15; 
                 
@@ -228,21 +258,15 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
                 let intensity = 0;
                 if (dist > eyeRadius) {
                   const normalizedDist = (dist - eyeRadius) / (influenceRadius - eyeRadius);
-                  // Inverse square falloff for realistic fluid mechanics
                   intensity = Math.pow(1.0 - normalizedDist, 2.0); 
                 } else {
-                  // Inside the eye, winds drop dramatically
                   intensity = (dist / eyeRadius) * 0.5;
                 }
                 
-                // Cyclone's own wind vector at this particle
                 cx = Math.cos(spiralRad) * (cycloneMaxWind * intensity);
                 cy = Math.sin(spiralRad) * (cycloneMaxWind * intensity);
               }
 
-              // Superposition Principle: We literally ADD the vector of the baseline wind to the cyclone wind.
-              // Far away from the storm, cx/cy are 0, so it's 100% baseline wind.
-              // Near the eyewall, cx/cy are huge (e.g. 150km/h), overpowering the baseline wind completely.
               const bx = Math.cos(interpRad) * interpSpeed;
               const by = Math.sin(interpRad) * interpSpeed;
               
@@ -259,7 +283,7 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
             
             // Move particle geographically
             wp.lon += Math.cos(finalRad) * geoSpeed;
-            wp.lat += Math.sin(finalRad) * geoSpeed; // Correct geographic math (Lat increases as it goes North)
+            wp.lat += Math.sin(finalRad) * geoSpeed;
             wp.life++;
 
             // Record geographic history
@@ -277,14 +301,14 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
             // Draw particle by projecting geographic path to screen pixels
             if (wp.path.length > 1) {
               ctx.beginPath();
-              const startPx = mapInstance.project(wp.path[0]);
+              const startPx = curMap.project(wp.path[0]);
               
               // Culling: don't draw if entirely off-screen
               if (startPx.x < 0 || startPx.x > canvas.width || startPx.y < 0 || startPx.y > canvas.height) continue;
               
               ctx.moveTo(startPx.x, startPx.y);
               for (let j = 1; j < wp.path.length; j++) {
-                const px = mapInstance.project(wp.path[j]);
+                const px = curMap.project(wp.path[j]);
                 ctx.lineTo(px.x, px.y);
               }
               
@@ -301,7 +325,7 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
 
 
         // 3. Marine Waves Overlay (Arabian Sea Coastal Swells & Ripples)
-        if (layers.marine && mapInstance) {
+        if (curLayers.marine && curMap) {
           const marineWavePoints = [
             [72.815, 18.915], // Colaba / Prongs Reef
             [72.810, 18.955], // Marine Drive / Chowpatty Bay
@@ -315,14 +339,14 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
             [72.760, 19.080]  // Deep Arabian Sea Swell
           ];
 
-          const waveHeight = marine?.wave_height || 0.8;
-          const wavePeriod = marine?.wave_period || 8.0;
+          const waveHeight = curMarine?.wave_height || 0.8;
+          const wavePeriod = curMarine?.wave_period || 8.0;
           const cycleSpeed = (Math.PI * 2) / (wavePeriod * 60);
 
           ctx.save();
           for (let i = 0; i < marineWavePoints.length; i++) {
             const pt = marineWavePoints[i];
-            const px = mapInstance.project(pt);
+            const px = curMap.project(pt);
 
             if (px.x < -100 || px.x > canvas.width + 100 || px.y < -100 || px.y > canvas.height + 100) continue;
 
@@ -351,7 +375,7 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
         }
 
         // 4. Disaster Simulation Plugin Rendering
-        if (managerRef.current && activeDisaster) {
+        if (managerRef.current && curDisaster) {
           managerRef.current.renderFrame(timeStep);
         }
       }
@@ -365,7 +389,7 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
       window.removeEventListener("resize", updateSize);
       cancelAnimationFrame(animId);
     };
-  }, [weather, aqi, marine, layers, activeDisaster, mapInstance, windGrid]);
+  }, []);
 
   // Activate disaster module plugin when activeDisaster changes
   useEffect(() => {

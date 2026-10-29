@@ -111,7 +111,7 @@ export const LayerControl: React.FC<LayerControlProps> = ({
                         aqi: 'aqi', marine: 'marine', flights: 'flights'
                       };
                       const api = apiMap[item.key];
-                      if (api && statuses[api] && !statuses[api].enabled) {
+                      if (api && statuses && statuses[api] && !statuses[api].enabled && !active) {
                         setErrorMsg(`Cannot enable: ${item.label} API is OFF`);
                         setTimeout(() => setErrorMsg(null), 3000);
                         return;

@@ -145,11 +145,8 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   // min_height fields from OpenStreetMap data via OpenMapTiles schema.
   // ──────────────────────────────────────────────────────────────────────────
   const setup3DBuildings = (map: any, style: MapStyleType, show: boolean) => {
-    if (!map) return;
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => setup3DBuildings(map, style, layersRef.current.buildings ?? true));
-      return;
-    }
+    if (!map || !map.style) return;
+    const isVis = show !== undefined ? show : Boolean(layersRef.current.buildings);
     const dark = isDarkStyle(style);
     if (style === "satellite") return;
 
@@ -172,18 +169,18 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
           type: "fill-extrusion",
           minzoom: 14,
           layout: {
-            visibility: show ? "visible" : "none"
+            visibility: isVis ? "visible" : "none"
           },
           paint: {
             "fill-extrusion-color": dark ? "#0e7490" : "#aaa",
             "fill-extrusion-height": ["get", "height"],
             "fill-extrusion-base": ["get", "min_height"],
-            "fill-extrusion-opacity": show ? 0.8 : 0
+            "fill-extrusion-opacity": isVis ? 0.8 : 0
           }
         });
     } else {
-      map.setLayoutProperty("ofm-3d-buildings", "visibility", show ? "visible" : "none");
-      map.setPaintProperty("ofm-3d-buildings", "fill-extrusion-opacity", show ? 0.8 : 0);
+      map.setLayoutProperty("ofm-3d-buildings", "visibility", isVis ? "visible" : "none");
+      map.setPaintProperty("ofm-3d-buildings", "fill-extrusion-opacity", isVis ? 0.8 : 0);
     }
   };
 
@@ -191,12 +188,8 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   // Procedural Traffic Overlay Layer
   // ──────────────────────────────────────────────────────────────────────────
   const setupTraffic = (map: any, trData: TrafficData | null, show: boolean) => {
-    if (!map || !trData) return;
-
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => setupTraffic(map, trData, layersRef.current.traffic ?? false));
-      return;
-    }
+    if (!map || !map.style || !trData) return;
+    const isVis = show !== undefined ? show : Boolean(layersRef.current.traffic);
 
     // Cleanup legacy GeoJSON traffic lines if present
     if (map.getLayer("traffic-lines")) {
@@ -222,7 +215,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         layout: {
           "line-join": "round",
           "line-cap": "round",
-          visibility: show ? "visible" : "none"
+          visibility: isVis ? "visible" : "none"
         },
         paint: {
           // Generate a deterministic pseudo-random hash per road segment
@@ -255,7 +248,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
       map.setLayoutProperty(
         "ofm-traffic-overlay",
         "visibility",
-        show ? "visible" : "none"
+        isVis ? "visible" : "none"
       );
     }
   };
@@ -264,12 +257,9 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   // AQI Heatmap Layer
   // ──────────────────────────────────────────────────────────────────────────
   const setupAQI = (map: any, aqiData: AQIData | null, show: boolean) => {
-    if (!map || !aqiData || !aqiData.stations) return;
-
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => setupAQI(map, aqiData, layersRef.current.aqi ?? false));
-      return;
-    }
+    if (!map || !map.style || !aqiData || !aqiData.stations) return;
+    const isVis = show !== undefined ? show : Boolean(layersRef.current.aqi);
+    const aqiVis = isVis ? "visible" : "none";
 
     const aqiGeoJSON: any = {
       type: "FeatureCollection",
@@ -308,7 +298,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
           source: "aqi-source",
           maxzoom: 17,
           layout: {
-            visibility: show ? "visible" : "none"
+            visibility: aqiVis
           },
           paint: {
             "heatmap-weight": [
@@ -362,7 +352,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         map.getLayer("ofm-3d-buildings") ? "ofm-3d-buildings" : undefined
       );
     } else {
-      map.setLayoutProperty("aqi-heatmap", "visibility", show ? "visible" : "none");
+      map.setLayoutProperty("aqi-heatmap", "visibility", aqiVis);
     }
 
     // 2. Solid Badge Layer for Distinct Regional Stations
@@ -373,7 +363,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         source: "aqi-source",
         filter: ["!=", ["get", "isGrid"], 1],
         layout: {
-          visibility: show ? "visible" : "none"
+          visibility: aqiVis
         },
         paint: {
           "circle-blur": 0,
@@ -401,7 +391,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         }
       });
     } else {
-      map.setLayoutProperty("aqi-coverage-circles", "visibility", show ? "visible" : "none");
+      map.setLayoutProperty("aqi-coverage-circles", "visibility", aqiVis);
     }
 
     // 3. Exact Value Symbol Layer (Numbers inside the badge)
@@ -412,7 +402,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         source: "aqi-source",
         filter: ["!=", ["get", "isGrid"], 1],
         layout: {
-          visibility: show ? "visible" : "none",
+          visibility: aqiVis,
           "text-field": ["to-string", ["get", "aqi"]],
           "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
           "text-size": [
@@ -436,7 +426,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         }
       });
     } else {
-      map.setLayoutProperty("aqi-value-labels", "visibility", show ? "visible" : "none");
+      map.setLayoutProperty("aqi-value-labels", "visibility", aqiVis);
     }
 
     // 4. Region Name Labels below badges
@@ -448,7 +438,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         filter: ["!=", ["get", "isGrid"], 1],
         minzoom: 10,
         layout: {
-          visibility: show ? "visible" : "none",
+          visibility: aqiVis,
           "text-field": ["get", "name"],
           "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
           "text-size": [
@@ -471,7 +461,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         }
       });
     } else {
-      map.setLayoutProperty("aqi-station-labels", "visibility", show ? "visible" : "none");
+      map.setLayoutProperty("aqi-station-labels", "visibility", aqiVis);
     }
   };
 
@@ -479,12 +469,9 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   // Procedural Train Simulation Layer
   // ──────────────────────────────────────────────────────────────────────────
   const setupRailways = (map: any, gisData: any, trainsData: any, show: boolean) => {
-    if (!map || !gisData || !gisData.railways) return;
-
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => setupRailways(map, gisData, trainsData, layersRef.current.railways ?? true));
-      return;
-    }
+    if (!map || !map.style || !gisData || !gisData.railways) return;
+    const isVis = show !== undefined ? show : Boolean(layersRef.current.railways);
+    const visStr = isVis ? "visible" : "none";
 
     // 1. Setup Tracks
     const tracksGeoJSON: any = {
@@ -508,7 +495,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         layout: {
           "line-join": "round",
           "line-cap": "round",
-          visibility: show ? "visible" : "none"
+          visibility: visStr
         },
         paint: {
           "line-color": ["get", "color"],
@@ -518,7 +505,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
       });
     } else {
       map.getSource("railway-tracks").setData(tracksGeoJSON);
-      map.setLayoutProperty("railway-tracks-layer", "visibility", show ? "visible" : "none");
+      map.setLayoutProperty("railway-tracks-layer", "visibility", visStr);
     }
 
     // 2. Setup Stations
@@ -539,7 +526,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         id: "railway-stations-layer",
         type: "circle",
         source: "railway-stations",
-        layout: { visibility: show ? "visible" : "none" },
+        layout: { visibility: visStr },
         paint: {
           "circle-radius": 4,
           "circle-color": "#ffffff",
@@ -553,7 +540,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         type: "symbol",
         source: "railway-stations",
         layout: {
-          "visibility": show ? "visible" : "none",
+          "visibility": visStr,
           "text-field": ["get", "name"],
           "text-font": ["Open Sans Bold", "Arial Unicode MS Bold"],
           "text-size": 14,
@@ -568,9 +555,9 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
       });
     } else {
       map.getSource("railway-stations").setData(stationsGeoJSON);
-      map.setLayoutProperty("railway-stations-layer", "visibility", show ? "visible" : "none");
+      map.setLayoutProperty("railway-stations-layer", "visibility", visStr);
       if (map.getLayer("railway-stations-label-layer")) {
-        map.setLayoutProperty("railway-stations-label-layer", "visibility", show ? "visible" : "none");
+        map.setLayoutProperty("railway-stations-label-layer", "visibility", visStr);
       }
     }
 
@@ -580,7 +567,6 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         map.addSource("live-trains", { type: "geojson", data: trainsData });
 
         try {
-          // Reliable 3D Extrusion Fallback across all MapLibre versions
           if (!map.getSource("live-trains-3d")) {
             map.addSource("live-trains-3d", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
           }
@@ -590,7 +576,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
               id: "live-trains-3d-layer",
               type: "fill-extrusion",
               source: "live-trains-3d",
-              layout: { visibility: show ? "visible" : "none" },
+              layout: { visibility: visStr },
               paint: {
                 "fill-extrusion-color": ["get", "render_color"],
                 "fill-extrusion-height": ["get", "render_height"],
@@ -609,7 +595,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
               id: "live-trains-bg-layer",
               type: "circle",
               source: "live-trains",
-              layout: { visibility: show ? "visible" : "none" },
+              layout: { visibility: visStr },
               paint: {
                 "circle-radius": [
                   "case",
@@ -637,7 +623,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
               type: "symbol",
               source: "live-trains",
               layout: {
-                "visibility": show ? "visible" : "none",
+                "visibility": visStr,
                 "icon-image": "train-icon",
                 "icon-size": 0.7,
                 "icon-allow-overlap": true,
@@ -650,9 +636,9 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         }
       } else {
         map.getSource("live-trains").setData(trainsData);
-        if (map.getLayer("live-trains-bg-layer")) map.setLayoutProperty("live-trains-bg-layer", "visibility", show ? "visible" : "none");
-        if (map.getLayer("live-trains-layer")) map.setLayoutProperty("live-trains-layer", "visibility", show ? "visible" : "none");
-        if (map.getLayer("live-trains-3d-layer")) map.setLayoutProperty("live-trains-3d-layer", "visibility", show ? "visible" : "none");
+        if (map.getLayer("live-trains-bg-layer")) map.setLayoutProperty("live-trains-bg-layer", "visibility", visStr);
+        if (map.getLayer("live-trains-layer")) map.setLayoutProperty("live-trains-layer", "visibility", visStr);
+        if (map.getLayer("live-trains-3d-layer")) map.setLayoutProperty("live-trains-3d-layer", "visibility", visStr);
       }
     }
   };
@@ -703,7 +689,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
       trainAnimFrameId.current = requestAnimationFrame(animateTrains);
       
       const map = mapRef.current;
-      if (!map || !map.isStyleLoaded() || !map.getSource("live-trains") || !trainDataRef.current) {
+      if (!map || !map.style || !map.getSource("live-trains") || !trainDataRef.current || !layersRef.current.railways) {
         lastTrainFrameTime.current = time;
         return;
       }
@@ -817,9 +803,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
     trainAnimFrameId.current = requestAnimationFrame(animateTrains);
     
     return () => {
-      if (flightAnimFrameId.current) cancelAnimationFrame(flightAnimFrameId.current);
       if (trainAnimFrameId.current) cancelAnimationFrame(trainAnimFrameId.current);
-      if (floodAnimFrameId.current) cancelAnimationFrame(floodAnimFrameId.current);
     };
   }, []);
 
@@ -837,7 +821,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
       flightAnimFrameId.current = requestAnimationFrame(animateFlights);
       
       const map = mapRef.current;
-      if (!map || !map.isStyleLoaded() || !map.getSource("live-flights") || !flightDataRef.current) {
+      if (!map || !map.style || !map.getSource("live-flights") || !flightDataRef.current || !layersRef.current.flights) {
         lastFlightFrameTime.current = time;
         return;
       }
@@ -923,7 +907,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   };
 
   const syncAllLayerVisibilities = (map: any) => {
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !map.style) return;
     const curLayers = layersRef.current;
 
     for (const [groupKey, layerIds] of Object.entries(ALL_LAYER_GROUPS)) {
@@ -947,14 +931,9 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   // Procedural 3D Metro Network & Infrastructure Layer
   // ──────────────────────────────────────────────────────────────────────────
   const setupMetros = (map: any, gisData: any, show: boolean) => {
-    if (!map || !gisData || !gisData.metros) return;
-    
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => setupMetros(map, gisData, layersRef.current.metros ?? true));
-      return;
-    }
-
-    const metroVisibility = show ? "visible" : "none";
+    if (!map || !map.style || !gisData || !gisData.metros) return;
+    const isVis = show !== undefined ? show : Boolean(layersRef.current.metros);
+    const metroVisibility = isVis ? "visible" : "none";
     
     // 1. Setup 3D Viaducts, Pillars, and 3D Station Models
     if (gisData.metro_bridges_3d && gisData.metro_bridges_3d.features) {
@@ -1295,7 +1274,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
       metroAnimFrameId.current = requestAnimationFrame(animateMetroTrains);
       
       const map = mapRef.current;
-      if (!map || !map.isStyleLoaded() || !metroTrainsRef.current || !layers.metros) {
+      if (!map || !map.style || !metroTrainsRef.current || !layersRef.current.metros) {
         lastMetroFrameTime.current = time;
         return;
       }
@@ -1399,18 +1378,15 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
     return () => {
       if (metroAnimFrameId.current) cancelAnimationFrame(metroAnimFrameId.current);
     };
-  }, [layers.metros]);
+  }, []);
 
   // ──────────────────────────────────────────────────────────────────────────
   // Ward Labels Layer (BMC Municipal Wards)
   // ──────────────────────────────────────────────────────────────────────────
   const setupWardLabels = (map: any, gis: any, show: boolean) => {
-    if (!map || !gis || !gis.wards || gis.wards.length === 0) return;
-
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => setupWardLabels(map, gis, layersRef.current.labels ?? false));
-      return;
-    }
+    if (!map || !map.style || !gis || !gis.wards || gis.wards.length === 0) return;
+    const isVis = show !== undefined ? show : Boolean(layersRef.current.labels);
+    const visStr = isVis ? "visible" : "none";
 
     const wardsGeoJSON: any = {
       type: "FeatureCollection",
@@ -1438,7 +1414,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         type: "symbol",
         source: "mumbai-wards",
         layout: {
-          "visibility": show ? "visible" : "none",
+          "visibility": visStr,
           "text-field": ["get", "label"],
           "text-size": 11,
           "text-anchor": "center",
@@ -1453,19 +1429,16 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
     } else {
       map.getSource("mumbai-wards").setData(wardsGeoJSON);
       if (map.getLayer("ward-labels-layer")) {
-        map.setLayoutProperty("ward-labels-layer", "visibility", show ? "visible" : "none");
+        map.setLayoutProperty("ward-labels-layer", "visibility", visStr);
       }
     }
   };
 
   const setupFlights = (map: any, flightsData: any, show: boolean) => {
-    if (!map) return;
+    if (!map || !map.style) return;
     ensureCustomIcons(map);
-
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => setupFlights(map, flightsData, layersRef.current.flights ?? true));
-      return;
-    }
+    const isVis = show !== undefined ? show : Boolean(layersRef.current.flights);
+    const visStr = isVis ? "visible" : "none";
 
     const data = (flightsData && flightsData.features && flightsData.features.length > 0)
       ? flightsData
@@ -1486,7 +1459,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
           "icon-rotate": ["get", "heading"],
           "icon-rotation-alignment": "map",
           "icon-pitch-alignment": "map",
-          "visibility": show ? "visible" : "none"
+          "visibility": visStr
         }
       });
 
@@ -1501,7 +1474,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
           "text-anchor": "top",
           "text-allow-overlap": false,
           "text-optional": true,
-          "visibility": show ? "visible" : "none"
+          "visibility": visStr
         },
         paint: {
           "text-color": "#fbbf24",
@@ -1512,10 +1485,10 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
     } else {
       map.getSource("live-flights").setData(data);
       if (map.getLayer("live-flights-layer")) {
-        map.setLayoutProperty("live-flights-layer", "visibility", show ? "visible" : "none");
+        map.setLayoutProperty("live-flights-layer", "visibility", visStr);
       }
       if (map.getLayer("live-flights-label-layer")) {
-        map.setLayoutProperty("live-flights-label-layer", "visibility", show ? "visible" : "none");
+        map.setLayoutProperty("live-flights-label-layer", "visibility", visStr);
       }
     }
   };
@@ -1556,12 +1529,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   };
 
   const setupImpactZones = (map: any, disaster: string | null | undefined, result: any) => {
-    if (!map) return;
-
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => setupImpactZones(map, disaster, result));
-      return;
-    }
+    if (!map || !map.style) return;
 
     if (!disaster || !result || !result.lat || !result.lon || disaster === "flood") {
       if (map.getLayer("impact-zones-layer")) map.setLayoutProperty("impact-zones-layer", "visibility", "none");
@@ -1630,12 +1598,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   };
 
   const setupFloodMap = (map: any, disaster: string | null | undefined, params: any) => {
-    if (!map) return;
-
-    if (!map.isStyleLoaded()) {
-      map.once("styledata", () => setupFloodMap(map, disaster, params));
-      return;
-    }
+    if (!map || !map.style) return;
 
     if (disaster !== "flood" || !params || params.tide_height_m === undefined) {
       if (map.getLayer("floodmap-layer")) {
@@ -2234,7 +2197,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   useEffect(() => {
     gisDataRef.current = gisData;
     const map = mapRef.current;
-    if (!map || !gisData || !map.isStyleLoaded()) return;
+    if (!map || !gisData || !map.style) return;
     setupRailways(map, gisData, trainsRef.current, Boolean(layersRef.current.railways));
     setupMetros(map, gisData, Boolean(layersRef.current.metros));
     setupWardLabels(map, gisData, Boolean(layersRef.current.labels));
@@ -2244,35 +2207,35 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   useEffect(() => {
     trainsRef.current = trains;
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded() || !gisDataRef.current) return;
+    if (!map || !map.style || !gisDataRef.current) return;
     setupRailways(map, gisDataRef.current, trains, Boolean(layersRef.current.railways));
   }, [trains]);
 
   useEffect(() => {
     flightsRef.current = flights;
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !map.style) return;
     setupFlights(map, flights, Boolean(layersRef.current.flights));
   }, [flights]);
 
   useEffect(() => {
     trafficRef.current = traffic;
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded() || !traffic) return;
+    if (!map || !map.style || !traffic) return;
     setupTraffic(map, traffic, Boolean(layersRef.current.traffic));
   }, [traffic]);
 
   useEffect(() => {
     aqiRef.current = aqi;
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded() || !aqi) return;
+    if (!map || !map.style || !aqi) return;
     setupAQI(map, aqi, Boolean(layersRef.current.aqi));
   }, [aqi]);
 
   // Sync Disaster Impact Zones when simulation results or active disaster changes
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !map.style) return;
     setupImpactZones(map, activeDisaster, simulationResult);
     setupFloodMap(map, activeDisaster, simulationParams);
   }, [activeDisaster, simulationResult, simulationParams, mapStyle]);
@@ -2283,7 +2246,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
   useEffect(() => {
     layersRef.current = layers;
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map || !map.style) return;
 
     // Lazily construct any layer if user turned it ON and it does not yet exist
     if (layers.buildings && !map.getLayer("ofm-3d-buildings")) {
