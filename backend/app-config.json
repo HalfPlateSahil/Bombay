@@ -1,0 +1,12 @@
+{
+  "command": "python3 main.py",
+  "build_path": "./",
+  "stack": "python3_11",
+  "memory": 512,
+  "env_variables": {
+    "PYTHONUNBUFFERED": "1"
+  },
+  "scripts": {
+    "predeploy": "/Users/macy/.local/bin/uv pip install --python-platform linux --target ./lib -r requirements.txt || python3 -m pip install --only-binary=:all: --platform manylinux2014_x86_64 -r requirements.txt -t ./lib"
+  }
+}

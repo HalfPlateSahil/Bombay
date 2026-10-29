@@ -1,3 +1,18 @@
+import os
+import sys
+from pathlib import Path
+
+# Bootstrap paths for Catalyst AppSail runtime & module resolution
+_current_dir = Path(__file__).resolve().parent
+_lib_dir = _current_dir / "lib"
+if _lib_dir.exists() and str(_lib_dir) not in sys.path:
+    sys.path.insert(0, str(_lib_dir))
+_parent_dir = _current_dir.parent
+if str(_parent_dir) not in sys.path:
+    sys.path.insert(0, str(_parent_dir))
+if str(_current_dir) not in sys.path:
+    sys.path.insert(0, str(_current_dir))
+
 import logging
 import asyncio
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, Query, HTTPException, BackgroundTasks
@@ -97,11 +112,15 @@ async def get_flight_photo_route(icao24: str):
 def get_gis():
     return get_mumbai_gis_data()
 
-@app.get(f"{settings.API_PREFIX}/floodmap/{{z}}/{{x}}/{{y}}")
+@app.api_route(f"{settings.API_PREFIX}/floodmap/{{z}}/{{x}}/{{y}}", methods=["GET", "HEAD"])
 async def get_floodmap_tile(z: int, x: int, y: int, elev: float = Query(0.0)):
     try:
         img_bytes = await process_flood_tile(z, x, y, elev)
-        return Response(content=img_bytes, media_type="image/png")
+        return Response(
+            content=img_bytes,
+            media_type="image/png",
+            headers={"Cache-Control": "public, max-age=300"}
+        )
     except Exception as e:
         logger.error(f"Error generating flood tile: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -152,3 +171,9 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_json({"event": "ack", "received": data})
     except WebSocketDisconnect:
         ws_manager.disconnect(websocket)
+
+if __name__ == "__main__":
+    import uvicorn
+    listen_port = int(os.environ.get("X_ZOHO_CATALYST_LISTEN_PORT", os.environ.get("PORT", 8000)))
+    logger.info(f"Starting Mumbai Atlas backend on port {listen_port}...")
+    uvicorn.run(app, host="0.0.0.0", port=listen_port)

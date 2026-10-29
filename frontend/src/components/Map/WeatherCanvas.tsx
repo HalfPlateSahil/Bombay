@@ -90,24 +90,32 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
       if (ctx) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 1. Live Weather Overlay: Rain Particles
-        if (layers.weather && weather && weather.rainfall > 0) {
-          const intensityRatio = Math.min(1.0, weather.rainfall / 40.0);
+        // 1. Live Weather Overlay or Flood Disaster Rain Particles
+        const isFlood = activeDisaster === "flood";
+        const floodRain = simulationParams?.rainfall_mm_hr ?? 120;
+        const showRain = Boolean(layers.weather || isFlood);
+
+        if (showRain) {
+          const currentRain = (weather && weather.rainfall > 0) ? weather.rainfall : (layers.weather ? 8 : 0);
+          const intensityRatio = isFlood 
+            ? Math.min(1.0, Math.max(0.25, floodRain / 180.0))
+            : Math.min(1.0, Math.max(0.3, currentRain / 40.0));
           const activeCount = Math.floor(rainParticles.length * intensityRatio);
 
-          ctx.strokeStyle = "rgba(186, 230, 253, 0.65)";
-          ctx.lineWidth = 1.6;
+          ctx.strokeStyle = isFlood ? "rgba(186, 230, 253, 0.85)" : "rgba(186, 230, 253, 0.65)";
+          ctx.lineWidth = isFlood ? 1.8 : 1.6;
           ctx.beginPath();
           for (let i = 0; i < activeCount; i++) {
             const p = rainParticles[i];
-            p.y += p.speed;
+            const speedMult = isFlood ? Math.max(1.0, floodRain / 100.0) : 1.0;
+            p.y += p.speed * speedMult;
             p.x += Math.sin(timeStep * 0.05) * 1.5;
             if (p.y > canvas.height) {
               p.y = -20;
               p.x = Math.random() * canvas.width;
             }
             ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p.x - 2, p.y + p.len);
+            ctx.lineTo(p.x - 2, p.y + p.len * (isFlood ? 1.3 : 1.0));
           }
           ctx.stroke();
         }
@@ -292,6 +300,56 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
         }
 
 
+        // 3. Marine Waves Overlay (Arabian Sea Coastal Swells & Ripples)
+        if (layers.marine && mapInstance) {
+          const marineWavePoints = [
+            [72.815, 18.915], // Colaba / Prongs Reef
+            [72.810, 18.955], // Marine Drive / Chowpatty Bay
+            [72.815, 19.015], // Worli Sea Face / Bandra-Worli Sea Link
+            [72.820, 19.060], // Bandra Bandstand / Carter Road
+            [72.825, 19.105], // Juhu Beach
+            [72.805, 19.145], // Versova Beach
+            [72.785, 19.195], // Madh Island Coast
+            [72.775, 19.245], // Manori / Gorai Beach
+            [72.790, 19.000], // Offshore Arabian Sea
+            [72.760, 19.080]  // Deep Arabian Sea Swell
+          ];
+
+          const waveHeight = marine?.wave_height || 0.8;
+          const wavePeriod = marine?.wave_period || 8.0;
+          const cycleSpeed = (Math.PI * 2) / (wavePeriod * 60);
+
+          ctx.save();
+          for (let i = 0; i < marineWavePoints.length; i++) {
+            const pt = marineWavePoints[i];
+            const px = mapInstance.project(pt);
+
+            if (px.x < -100 || px.x > canvas.width + 100 || px.y < -100 || px.y > canvas.height + 100) continue;
+
+            const phase = (timeStep * cycleSpeed + i * 1.2) % (Math.PI * 2);
+            const radius = 25 + Math.sin(phase) * 15 + (waveHeight * 20);
+            const opacity = Math.max(0, Math.cos(phase) * 0.45);
+
+            const grad = ctx.createRadialGradient(px.x, px.y, 5, px.x, px.y, radius);
+            grad.addColorStop(0, `rgba(56, 189, 248, ${opacity * 0.6})`);
+            grad.addColorStop(0.5, `rgba(14, 165, 233, ${opacity * 0.3})`);
+            grad.addColorStop(1, "rgba(2, 132, 199, 0)");
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(px.x, px.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Concentric wave ripple ring
+            ctx.strokeStyle = `rgba(186, 230, 253, ${opacity * 0.7})`;
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.arc(px.x, px.y, radius * 0.75, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
         // 4. Disaster Simulation Plugin Rendering
         if (managerRef.current && activeDisaster) {
           managerRef.current.renderFrame(timeStep);
@@ -307,7 +365,7 @@ export const WeatherCanvas: React.FC<WeatherCanvasProps> = ({
       window.removeEventListener("resize", updateSize);
       cancelAnimationFrame(animId);
     };
-  }, [weather, aqi, marine, layers, activeDisaster]);
+  }, [weather, aqi, marine, layers, activeDisaster, mapInstance, windGrid]);
 
   // Activate disaster module plugin when activeDisaster changes
   useEffect(() => {

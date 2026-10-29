@@ -19,7 +19,7 @@ import { Settings2, Terminal } from "lucide-react";
 export default function Home() {
   // App Mode & Map Style state
   const [mode, setMode] = useState<"live" | "disaster">("live");
-  const [mapStyle, setMapStyle] = useState<MapStyleType>("liberty");
+  const [mapStyle, setMapStyle] = useState<MapStyleType>("streets");
 
   // Simulation Time override
   const [simTime, setSimTime] = useState<string | null>(null);
@@ -45,7 +45,9 @@ export default function Home() {
   const [layers, setLayers] = useState<Record<string, boolean>>({
     buildings: true,
     traffic: false,
-    railways: false,
+    railways: true,
+    metros: true,
+    flights: true,
     weather: false,
     wind: false,
     aqi: false,

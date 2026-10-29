@@ -29,6 +29,7 @@ export const LayerControl: React.FC<LayerControlProps> = ({
     { key: "buildings", label: "3D Buildings", icon: Building2, color: "text-blue-500" },
     { key: "traffic", label: "Traffic Congestion", icon: Car, color: "text-amber-500" },
     { key: "railways", label: "Railway Network", icon: Train, color: "text-indigo-500" },
+    { key: "metros", label: "Metro Network", icon: Train, color: "text-rose-500" },
     { key: "weather", label: "Weather Particles", icon: CloudRain, color: "text-sky-500" },
     { key: "wind", label: "Wind Currents", icon: Wind, color: "text-cyan-400" },
     { key: "aqi", label: "AQI Heatmap", icon: Eye, color: "text-emerald-500" },
@@ -38,10 +39,10 @@ export const LayerControl: React.FC<LayerControlProps> = ({
   ];
 
   const styleItems: { key: MapStyleType; label: string; icon: any }[] = [
-    { key: "liberty", label: "Liberty", icon: Map },
-    { key: "bright", label: "Bright", icon: Sun },
+    { key: "streets", label: "Streets", icon: Map },
+    { key: "outdoors", label: "Outdoors", icon: Sun },
+    { key: "light", label: "Light", icon: Compass },
     { key: "dark", label: "Dark", icon: Moon },
-    { key: "positron", label: "Positron", icon: Compass },
     { key: "satellite", label: "Satellite", icon: Globe }
   ];
 
@@ -130,12 +131,12 @@ export const LayerControl: React.FC<LayerControlProps> = ({
                     {/* Ultra minimal iOS-style toggle */}
                     <div
                       className={`w-7 h-3.5 rounded-full p-0.5 transition-colors duration-300 ${
-                        active ? "bg-white/30" : "bg-white/10"
+                        active ? "bg-cyan-500 shadow-sm shadow-cyan-500/50" : "bg-white/15"
                       }`}
                     >
                       <div
                         className={`w-2.5 h-2.5 rounded-full bg-white transition-transform duration-300 shadow-sm ${
-                          active ? "translate-x-3.5" : "translate-x-0"
+                          active ? "translate-x-[14px]" : "translate-x-0"
                         }`}
                       />
                     </div>

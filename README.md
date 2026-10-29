@@ -1,4 +1,4 @@
-# Mumbai Atlas: Real-time Digital Twin & Climate / Disaster Simulation Platform
+<!-- # Mumbai Atlas: Real-time Digital Twin & Climate / Disaster Simulation Platform
 
 > A real-time 3D interactive clone of Mumbai featuring live weather, air quality, marine conditions, traffic congestion telemetry, and an interactive **Disaster Testing & Climate Simulation Engine**.
 
@@ -121,4 +121,4 @@ export interface DisasterPlugin {
 ---
 
 ## 📄 License
-MIT License. Created for Mumbai Digital Twin & Climate Adaptation Research.
+MIT License. Created for Mumbai Digital Twin & Climate Adaptation Research. -->

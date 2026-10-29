@@ -79,6 +79,7 @@ export function useTelemetryEngine(simTime: string | null = null, simStartTime: 
                restored[key as ApiKey] = makeInitialStatus(parsed[key]);
             }
           }
+          restored.gis = makeInitialStatus(true);
           return restored;
         }
       } catch (e) {}
@@ -132,7 +133,7 @@ export function useTelemetryEngine(simTime: string | null = null, simStartTime: 
   // ── Core fetch handler that unwraps ApiResponse and logs call history ──────
   const fetchApi = async (key: ApiKey, fetcher: () => Promise<ApiResponse<any>>, dataKey: keyof typeof data) => {
     const currentStatus = statusesRef.current[key];
-    if (!currentStatus || !currentStatus.enabled) return;
+    if (key !== 'gis' && (!currentStatus || !currentStatus.enabled)) return;
 
     setStatuses(prev => ({ ...prev, [key]: { ...prev[key], status: 'FETCHING' } }));
     

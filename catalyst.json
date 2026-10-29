@@ -1,0 +1,14 @@
+{
+  "client": {
+    "source": "client",
+    "scripts": {
+      "predeploy": "npm run build --prefix frontend && cp -r frontend/out/* client/"
+    }
+  },
+  "appsail": [
+    {
+      "name": "mumbai-atlas-backend",
+      "source": "backend"
+    }
+  ]
+}

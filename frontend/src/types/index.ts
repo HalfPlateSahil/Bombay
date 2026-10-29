@@ -23,6 +23,8 @@ export interface AQIStation {
   lon: number;
   aqi: number;
   category: string;
+  pm2_5?: number;
+  pm10?: number;
 }
 
 export interface AQIData {
@@ -41,6 +43,7 @@ export interface AQIData {
 export interface MarineData {
   wave_height: number;
   wave_direction: number;
+  wave_period?: number;
   sea_temp: number;
   tide_height: number;
   tide_status: string;

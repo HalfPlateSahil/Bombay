@@ -52,6 +52,22 @@ export const DisasterControlPanel: React.FC<DisasterControlPanelProps> = ({
     onRunSimulation(selectedDisaster, epicenter, params);
   };
 
+  const selectTab = (disasterId: string) => {
+    setSelectedDisaster(disasterId);
+    if (!onLiveParamUpdate) return;
+    if (disasterId === "flood") {
+      onLiveParamUpdate("flood", { rainfall_mm_hr: rainfallMm, tide_height_m: tideHeightM, surge_m: 0.8 });
+    } else if (disasterId === "cyclone") {
+      onLiveParamUpdate("cyclone", { wind_speed_kmh: windSpeedKmh, central_pressure_mb: 955.0 });
+    } else if (disasterId === "earthquake") {
+      onLiveParamUpdate("earthquake", { magnitude, depth_km: 10.0 });
+    } else if (disasterId === "fire") {
+      onLiveParamUpdate("fire", { fire_radius_m: fireRadiusM, wind_speed_kmh: 25.0, wind_direction_deg: 240.0 });
+    } else if (disasterId === "climate") {
+      onLiveParamUpdate("climate", { sea_level_rise_m: seaLevelRiseM });
+    }
+  };
+
   return (
     <div className="absolute bottom-6 left-6 z-20 w-[calc(50%-1.5rem)] max-w-[800px] bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl p-4 shadow-2xl shadow-black/50 pointer-events-auto flex gap-6">
       
@@ -119,7 +135,7 @@ export const DisasterControlPanel: React.FC<DisasterControlPanelProps> = ({
             return (
               <button
                 key={item.id}
-                onClick={() => setSelectedDisaster(item.id)}
+                onClick={() => selectTab(item.id)}
                 className={`flex-1 flex flex-col items-center justify-center p-2 rounded-xl text-[8px] uppercase tracking-wider transition-all duration-300 ${
                   active
                     ? "bg-white/10 text-white border border-white/20 shadow-lg shadow-black/20"
@@ -147,7 +163,11 @@ export const DisasterControlPanel: React.FC<DisasterControlPanelProps> = ({
                   min="20"
                   max="250"
                   value={rainfallMm}
-                  onChange={(e) => setRainfallMm(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    setRainfallMm(val);
+                    if (onLiveParamUpdate) onLiveParamUpdate("flood", { rainfall_mm_hr: val, tide_height_m: tideHeightM, surge_m: 0.8 });
+                  }}
                   className="w-full accent-cyan-400 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
                 />
               </div>
@@ -165,7 +185,7 @@ export const DisasterControlPanel: React.FC<DisasterControlPanelProps> = ({
                   onChange={(e) => {
                     const val = Number(e.target.value);
                     setTideHeightM(val);
-                    if (onLiveParamUpdate) onLiveParamUpdate("flood", { tide_height_m: val });
+                    if (onLiveParamUpdate) onLiveParamUpdate("flood", { tide_height_m: val, rainfall_mm_hr: rainfallMm, surge_m: 0.8 });
                   }}
                   className="w-full accent-cyan-400 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
                 />
@@ -187,7 +207,7 @@ export const DisasterControlPanel: React.FC<DisasterControlPanelProps> = ({
                 onChange={(e) => {
                   const val = Number(e.target.value);
                   setWindSpeedKmh(val);
-                  if (onLiveParamUpdate) onLiveParamUpdate("cyclone", { wind_speed_kmh: val });
+                  if (onLiveParamUpdate) onLiveParamUpdate("cyclone", { wind_speed_kmh: val, central_pressure_mb: 955.0 });
                 }}
                 className="w-full accent-hazardRed cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
               />
@@ -206,7 +226,11 @@ export const DisasterControlPanel: React.FC<DisasterControlPanelProps> = ({
                 max="8.5"
                 step="0.1"
                 value={magnitude}
-                onChange={(e) => setMagnitude(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setMagnitude(val);
+                  if (onLiveParamUpdate) onLiveParamUpdate("earthquake", { magnitude: val, depth_km: 10.0 });
+                }}
                 className="w-full accent-hazardRed cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
               />
             </div>
@@ -224,7 +248,11 @@ export const DisasterControlPanel: React.FC<DisasterControlPanelProps> = ({
                 max="1200"
                 step="50"
                 value={fireRadiusM}
-                onChange={(e) => setFireRadiusM(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setFireRadiusM(val);
+                  if (onLiveParamUpdate) onLiveParamUpdate("fire", { fire_radius_m: val, wind_speed_kmh: 25.0, wind_direction_deg: 240.0 });
+                }}
                 className="w-full accent-amber-500 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
               />
             </div>
@@ -242,7 +270,11 @@ export const DisasterControlPanel: React.FC<DisasterControlPanelProps> = ({
                 max="5.0"
                 step="0.5"
                 value={seaLevelRiseM}
-                onChange={(e) => setSeaLevelRiseM(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  setSeaLevelRiseM(val);
+                  if (onLiveParamUpdate) onLiveParamUpdate("climate", { sea_level_rise_m: val });
+                }}
                 className="w-full accent-cyan-400 cursor-pointer h-1 bg-white/10 rounded-lg appearance-none"
               />
             </div>

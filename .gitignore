@@ -9,6 +9,7 @@ venv/
 .next/
 frontend/.next/
 out/
+client/
 build/
 dist/
 
@@ -42,3 +43,8 @@ pnpm-debug.log*
 *.swp
 *.swo
 .claude/
+.vercel/
+frontend/.vercel/
+*.local
+.vercel
+.env*
