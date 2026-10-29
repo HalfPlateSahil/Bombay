@@ -1673,12 +1673,15 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         id: "flood-hotspots-labels",
         type: "symbol",
         source: "flood-hotspots-source",
+        minzoom: 12.5,
         layout: {
           "text-field": ["concat", ["get", "name"], "\nWater Depth: ", ["get", "depth"], "m (", ["get", "severity"], ")"],
           "text-size": 11,
           "text-offset": [0, 1.6],
           "text-anchor": "top",
-          "text-allow-overlap": true
+          "text-allow-overlap": false,
+          "text-ignore-placement": false,
+          "text-optional": true
         },
         paint: {
           "text-color": "#ffffff",
@@ -1707,8 +1710,8 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
       map.addSource("floodmap-source", {
         type: "raster",
         tiles: [tileUrl],
-        tileSize: 512,
-        bounds: [72.70, 18.85, 73.20, 19.75],
+        tileSize: 256,
+        bounds: [72.72, 18.85, 73.25, 19.45],
         maxzoom: 14
       });
 
@@ -1718,7 +1721,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         type: "raster",
         source: "floodmap-source",
         paint: {
-          "raster-opacity": 0.88,
+          "raster-opacity": 0.85,
           "raster-fade-duration": 0
         }
       }, beforeLayer);
@@ -1728,14 +1731,10 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         const animateFlood = (timestamp: number) => {
           if (!map.getLayer("floodmap-layer")) return;
           const elapsed = timestamp - startTime;
-          const opacity = 0.82 + Math.sin(elapsed / 1200) * 0.08;
-          const hueRotate = Math.sin(elapsed / 2000) * 10;
-          const contrast = 1.0 + Math.sin(elapsed / 800) * 0.15;
+          const opacity = 0.80 + Math.sin(elapsed / 1600) * 0.08;
 
           try {
             map.setPaintProperty("floodmap-layer", "raster-opacity", opacity);
-            map.setPaintProperty("floodmap-layer", "raster-hue-rotate", hueRotate);
-            map.setPaintProperty("floodmap-layer", "raster-contrast", contrast);
           } catch (e) {}
 
           map.triggerRepaint();
@@ -1815,6 +1814,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         setupWardLabels(map, gisDataRef.current, Boolean(layersRef.current.labels));
         setupFlights(map, flightsRef.current, Boolean(layersRef.current.flights));
         setupImpactZones(map, activeDisaster, simulationResult);
+        setupFloodMap(map, activeDisaster, simulationParams);
         
         syncAllLayerVisibilities(map);
         
@@ -2079,6 +2079,46 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
       });
 
       // ──────────────────────────────────────────────────────────────────────────
+      // Flood Inundation Hotspot Hover Popup Logic
+      // ──────────────────────────────────────────────────────────────────────────
+      const floodPopup = new mapboxgl.default.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        className: 'flood-popup',
+        offset: 14
+      });
+
+      map.on('mouseenter', 'flood-hotspots-circles', (e: any) => {
+        map.getCanvas().style.cursor = 'pointer';
+        if (!e.features || e.features.length === 0) return;
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const p = e.features[0].properties;
+
+        const severityColor = p.color || '#22d3ee';
+        const html = `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 12px; min-width: 210px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6); color: #ffffff;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; gap: 8px;">
+              <span style="font-weight: 700; font-size: 13px; color: #f8fafc;">${p.name}</span>
+              <span style="font-size: 9px; padding: 2px 7px; border-radius: 9999px; background: ${severityColor}25; color: ${severityColor}; border: 1px solid ${severityColor}60; font-weight: 700; text-transform: uppercase;">${p.severity}</span>
+            </div>
+            <div style="display: flex; align-items: baseline; gap: 6px; margin-bottom: 8px;">
+              <span style="font-size: 26px; font-weight: 800; color: ${severityColor}; line-height: 1;">${p.depth}m</span>
+              <span style="font-size: 11px; font-weight: 500; color: #94a3b8;">Water Inundation Depth</span>
+            </div>
+            <div style="font-size: 10px; color: #cbd5e1; background: rgba(255,255,255,0.06); padding: 6px 8px; border-radius: 6px; border-left: 3px solid ${severityColor};">
+              ⚠️ High tide & storm drainage overflow risk zone
+            </div>
+          </div>
+        `;
+        floodPopup.setLngLat(coordinates).setHTML(html).addTo(map);
+      });
+
+      map.on('mouseleave', 'flood-hotspots-circles', () => {
+        map.getCanvas().style.cursor = '';
+        floodPopup.remove();
+      });
+
+      // ──────────────────────────────────────────────────────────────────────────
       // Metro Station & Track Interactive Popup Logic
       // ──────────────────────────────────────────────────────────────────────────
       const metroPopup = new mapboxgl.default.Popup({
@@ -2183,6 +2223,7 @@ export const MumbaiMap: React.FC<MumbaiMapProps> = ({
         setupWardLabels(mapRef.current, gisDataRef.current, Boolean(layersRef.current.labels));
         setupFlights(mapRef.current, flightsRef.current, Boolean(layersRef.current.flights));
         setupImpactZones(mapRef.current, activeDisaster, simulationResult);
+        setupFloodMap(mapRef.current, activeDisaster, simulationParams);
         syncAllLayerVisibilities(mapRef.current);
       });
 
